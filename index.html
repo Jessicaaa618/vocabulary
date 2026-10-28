@@ -1265,7 +1265,7 @@ function settingsHTML(){
       '<div class="kv" style="margin-bottom:14px;"><span>状态</span><b id="gh-status">' + syncStatusHTML() + '</b></div>' +
       '<div class="gh-form">' +
         '<div class="row2">' +
-          '<label>仓库（用户名/仓库名）<input id="gh-repo" type="text" value="' + esc(SYNC.repo) + '" placeholder="Jessicaaa618/-"></label>' +
+          '<label>仓库（用户名/仓库名）<input id="gh-repo" type="text" value="' + esc(SYNC.repo) + '" placeholder="Jessicaaa618/vocabulary"></label>' +
           '<label>分支<input id="gh-branch" type="text" value="' + esc(SYNC.branch) + '" placeholder="main"></label>' +
         '</div>' +
         '<label>访问令牌<input id="gh-token" type="password" placeholder="' +
@@ -1501,7 +1501,7 @@ async function clearAll(){
    ===================================================================== */
 var SYNC_KEY = 'vocab_srs_gh_v1';
 var SYNC = {
-  repo: 'Jessicaaa618/-', branch: 'main', path: 'data/vocab.json',
+  repo: 'Jessicaaa618/vocabulary', branch: 'main', path: 'data/vocab.json',
   token: '', lastSync: 0, sha: '', lastSig: '', pending: false,
   status: 'off', err: ''
 };
@@ -1819,7 +1819,7 @@ function readGhForm(){
 }
 async function doGhSave(){
   readGhForm();
-  if (!SYNC.repo || SYNC.repo.indexOf('/') <= 0) { toast('仓库格式应为 用户名/仓库名，例如 Jessicaaa618/-'); return; }
+  if (!SYNC.repo || SYNC.repo.indexOf('/') <= 0) { toast('仓库格式应为 用户名/仓库名，例如 Jessicaaa618/vocabulary'); return; }
   if (!SYNC.token) { toast('请填写访问令牌'); return; }
   SYNC.sha = '';
   SYNC.lastSig = '';
