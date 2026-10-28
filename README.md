@@ -2,7 +2,7 @@
 
 单文件网页版生词背诵工具，SM-2 间隔重复算法，支持朗文释义自动抓取与跨设备同步。
 
-打开即用：**https://jessicaaa618.github.io/-/**
+打开即用：**https://jessicaaa618.github.io/vocabulary/**
 
 ## 功能
 
