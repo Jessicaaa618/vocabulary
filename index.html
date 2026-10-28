@@ -1,0 +1,2148 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f5f6f8">
+<title>生词背诵 · SM-2</title>
+<style>
+:root{
+  --bg:#f5f6f8; --card:#ffffff; --text:#1a1d21; --muted:#6b7280; --line:#e6e8ec;
+  --accent:#2563eb; --accent-soft:#eff4ff;
+  --red:#e5484d; --red-soft:#fdeeee;
+  --amber:#d97706; --amber-soft:#fef6e7;
+  --green:#15803d; --green-soft:#eaf7ee;
+  --radius:16px;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;}
+/* 固定底栏会盖住最后一点内容：滚动停靠与定位都留出底栏高度 */
+html{scroll-padding-bottom:92px;}
+body{
+  background:var(--bg); color:var(--text);
+  font-family:Calibri,"楷体",KaiTi,"Segoe UI",system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+  font-size:16px; line-height:1.55;
+  padding-bottom:calc(74px + env(safe-area-inset-bottom));
+  -webkit-text-size-adjust:100%;
+}
+button{font:inherit; color:inherit;}
+.wrap{max-width:560px; margin:0 auto; padding:14px 16px 24px;}
+.h1{font-size:22px; font-weight:700; letter-spacing:.2px; margin:6px 0 2px;}
+.sub{color:var(--muted); font-size:13px;}
+.muted{color:var(--muted);}
+.hide{display:none !important;}
+
+/* ---------- 顶栏 ---------- */
+.topbar{
+  position:sticky; top:0; z-index:30; background:rgba(245,246,248,.92);
+  backdrop-filter:blur(10px); border-bottom:1px solid transparent;
+}
+.topbar .wrap{padding-top:12px; padding-bottom:8px;}
+.topbar.with-line{border-bottom-color:var(--line);}
+.brand{display:flex; align-items:center; gap:8px; font-weight:700; font-size:17px;}
+.brand .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);}
+
+/* ---------- 卡片通用 ---------- */
+.panel{
+  background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+  padding:16px; margin-bottom:12px;
+}
+.panel.flat{box-shadow:none;}
+.card-shadow{box-shadow:0 1px 2px rgba(16,24,40,.04), 0 8px 24px rgba(16,24,40,.05);}
+
+/* ---------- 首页统计 ---------- */
+.stats{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:14px 0 16px;}
+.stat{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:14px 10px; text-align:center;}
+.stat .num{font-size:26px; font-weight:700; line-height:1.15; letter-spacing:-.5px;}
+.stat .num .of{font-size:13px; font-weight:500; color:var(--muted); margin-left:1px;}
+.stat .lab{font-size:12px; color:var(--muted); margin-top:4px;}
+.stat.hero .num{color:var(--accent);}
+
+/* ---------- 按钮 ---------- */
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:6px;
+  min-height:46px; padding:0 16px; border-radius:12px;
+  border:1px solid var(--line); background:#fff; cursor:pointer;
+  font-size:15px; font-weight:600; transition:.15s; user-select:none;
+}
+.btn:active{transform:scale(.985);}
+.btn.primary{background:var(--accent); border-color:var(--accent); color:#fff;}
+.btn.primary:disabled{background:#c3cbd8; border-color:#c3cbd8; cursor:not-allowed;}
+.btn.big{width:100%; min-height:56px; font-size:17px; border-radius:14px;}
+.btn.danger{color:var(--red); border-color:#f0c2c3; background:var(--red-soft);}
+.btn.ghost{background:transparent;}
+.btn.tiny{min-height:32px; padding:0 10px; font-size:13px; border-radius:9px; font-weight:500;}
+.btn.block{width:100%;}
+.row-btns{display:flex; gap:10px; flex-wrap:wrap;}
+.row-btns .btn{flex:1 1 auto;}
+
+/* ---------- 学习卡 ---------- */
+.study-top{display:flex; align-items:center; gap:12px; margin-bottom:6px;}
+.progress{flex:1; height:6px; background:#e9ecf1; border-radius:99px; overflow:hidden;}
+.progress > i{display:block; height:100%; background:var(--accent); border-radius:99px; transition:width .3s;}
+.counter{font-size:13px; color:var(--muted); font-variant-numeric:tabular-nums; white-space:nowrap;}
+
+.card{perspective:1400px; height:clamp(300px, 50vh, 420px); margin:10px 0 14px;}
+.card-inner{position:relative; width:100%; height:100%; transform-style:preserve-3d; transition:transform .48s cubic-bezier(.22,.8,.24,1);}
+.card.flip .card-inner{transform:rotateY(180deg);}
+.face{
+  position:absolute; inset:0; background:var(--card); border:1px solid var(--line);
+  border-radius:20px; box-shadow:0 1px 2px rgba(16,24,40,.04), 0 10px 30px rgba(16,24,40,.06);
+  backface-visibility:hidden; -webkit-backface-visibility:hidden;
+  padding:22px; overflow:auto; display:flex; flex-direction:column;
+}
+.face.front{align-items:center; justify-content:center; text-align:center;}
+.face.back{transform:rotateY(180deg); justify-content:flex-start;}
+.term{font-size:clamp(30px, 9vw, 42px); font-weight:700; letter-spacing:-.5px; word-break:break-word; line-height:1.2;}
+.term-ipa{color:var(--muted); font-size:15px; margin-top:8px;}
+.tap-hint{position:absolute; bottom:14px; left:0; right:0; text-align:center; font-size:12px; color:#9aa1ac;}
+.sense{margin-bottom:14px;}
+.sense .pos{display:flex; align-items:center; gap:8px; font-size:12px; color:var(--accent); font-weight:700; letter-spacing:.6px; text-transform:lowercase;}
+.sense .pos .ipa{color:var(--muted); font-weight:400; letter-spacing:0;}
+.sense .def{font-size:16px; line-height:1.6; margin-top:4px;}
+.sense .ex{font-size:14px; color:var(--muted); font-style:italic; margin-top:6px; padding-left:10px; border-left:2px solid #eceff4;}
+.spk{width:30px; height:30px; border-radius:50%; border:1px solid var(--line); background:#fff; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; font-size:13px; padding:0;}
+.userdef{margin-top:auto; padding-top:14px; border-top:1px dashed var(--line); font-size:14px; color:var(--muted);}
+.userdef .lbl{display:block; font-size:11px; letter-spacing:.6px; color:#9aa1ac; margin-bottom:2px;}
+.note{font-size:12px; color:var(--muted); margin-top:-6px; margin-bottom:12px;}
+
+/* ---------- 评分按钮 ---------- */
+.grades{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px;}
+.grade{
+  min-height:66px; border-radius:14px; border:1px solid var(--line); background:#fff;
+  cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:1px; padding:8px 6px; transition:.12s;
+}
+.grade:active{transform:scale(.97);}
+.grade .gl{font-size:15px; font-weight:700;}
+.grade .gv{font-size:12px; color:var(--muted); font-variant-numeric:tabular-nums;}
+.grade.g1{border-color:#f3c9cb; background:var(--red-soft);} .grade.g1 .gl{color:var(--red);}
+.grade.g2{border-color:#f3ddb4; background:var(--amber-soft);} .grade.g2 .gl{color:var(--amber);}
+.grade.g3{border-color:#c9d9fb; background:var(--accent-soft);} .grade.g3 .gl{color:var(--accent);}
+.grade.g4{border-color:#bfe3c9; background:var(--green-soft);} .grade.g4 .gl{color:var(--green);}
+.kbd-hint{text-align:center; font-size:12px; color:#9aa1ac; margin-top:10px;}
+
+/* ---------- 词库 ---------- */
+.search{position:relative; margin-bottom:10px;}
+.search input{
+  width:100%; height:46px; border-radius:12px; border:1px solid var(--line);
+  background:#fff; padding:0 14px 0 38px; font:inherit; font-size:16px; outline:none;
+}
+.search input:focus{border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft);}
+.search .ico{position:absolute; left:13px; top:50%; transform:translateY(-50%); color:#9aa1ac; font-size:15px;}
+.chips{display:flex; gap:8px; overflow-x:auto; padding-bottom:8px; margin-bottom:6px; scrollbar-width:none;}
+.chips::-webkit-scrollbar{display:none;}
+.chip{flex:0 0 auto; height:34px; padding:0 14px; border-radius:99px; border:1px solid var(--line); background:#fff; font-size:13px; color:var(--muted); cursor:pointer;}
+.chip.on{background:var(--text); border-color:var(--text); color:#fff; font-weight:600;}
+.rowlist{display:flex; flex-direction:column; gap:8px;}
+.wrow{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:12px 12px 12px 14px; display:flex; gap:10px; align-items:flex-start;}
+.wrow .main{flex:1; min-width:0;}
+.wrow .wt{font-weight:700; font-size:16px; display:flex; align-items:center; gap:7px; flex-wrap:wrap;}
+.wrow .tag{font-size:10px; font-weight:700; letter-spacing:.4px; padding:1px 6px; border-radius:5px; background:#eef1f5; color:var(--muted); text-transform:lowercase;}
+.wrow .tag.ok{background:var(--green-soft); color:var(--green);}
+.wrow .tag.new{background:var(--accent-soft); color:var(--accent);}
+.wrow .wd{font-size:13px; color:var(--muted); margin-top:2px; overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;}
+.wrow .wm{font-size:11px; color:#9aa1ac; margin-top:4px; font-variant-numeric:tabular-nums;}
+.wrow .acts{display:flex; flex-direction:column; gap:6px; flex:0 0 auto;}
+.iconbtn{width:34px; height:34px; border-radius:10px; border:1px solid var(--line); background:#fff; cursor:pointer; font-size:14px; display:flex; align-items:center; justify-content:center; padding:0;}
+.iconbtn.ok{color:var(--green);} .iconbtn.del{color:var(--red);}
+.empty{text-align:center; color:var(--muted); padding:36px 10px; font-size:14px;}
+
+/* ---------- 导入面板 ---------- */
+details.imp{border:1px solid var(--line); border-radius:14px; background:#fff; margin-bottom:12px; overflow:hidden;}
+details.imp > summary{padding:14px; cursor:pointer; font-weight:600; font-size:15px; list-style:none; display:flex; align-items:center; justify-content:space-between;}
+details.imp > summary::-webkit-details-marker{display:none;}
+details.imp > summary::after{content:"＋"; color:var(--muted); font-weight:400;}
+details.imp[open] > summary::after{content:"－";}
+.imp-bd{padding:0 14px 14px;}
+textarea{
+  width:100%; min-height:120px; border-radius:12px; border:1px solid var(--line);
+  padding:12px; font:inherit; font-size:15px; line-height:1.6; resize:vertical; outline:none; background:#fcfcfd;
+}
+textarea:focus{border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft);}
+.hint{font-size:12px; color:var(--muted); margin:8px 0 10px; line-height:1.6;}
+.hint code{background:#eef1f5; padding:1px 5px; border-radius:4px; font-family:Consolas,monospace; font-size:11px;}
+
+/* ---------- 设置 ---------- */
+.set-item{display:flex; align-items:center; justify-content:space-between; gap:14px; padding:13px 0; border-bottom:1px solid var(--line);}
+.set-item:last-child{border-bottom:0;}
+.set-item .t{font-size:15px; font-weight:600;}
+.set-item .d{font-size:12px; color:var(--muted); margin-top:2px;}
+.num-in{width:96px; height:42px; text-align:center; border-radius:11px; border:1px solid var(--line); font:inherit; font-size:16px; font-weight:700; outline:none; background:#fcfcfd;}
+.num-in:focus{border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft);}
+.switch{width:52px; height:30px; border-radius:99px; border:0; background:#d6dae2; position:relative; cursor:pointer; transition:.2s; flex:0 0 auto;}
+.switch::after{content:""; position:absolute; top:3px; left:3px; width:24px; height:24px; border-radius:50%; background:#fff; transition:.2s; box-shadow:0 1px 3px rgba(0,0,0,.2);}
+.switch.on{background:var(--accent);}
+.switch.on::after{transform:translateX(22px);}
+.sec-title{font-size:12px; font-weight:700; letter-spacing:1px; color:#9aa1ac; margin:20px 0 8px; padding-left:2px;}
+.kv{display:flex; justify-content:space-between; font-size:13px; color:var(--muted); padding:5px 0; font-variant-numeric:tabular-nums;}
+.kv b{color:var(--text); font-weight:600;}
+
+/* ---------- 跨设备同步 ---------- */
+.dot{display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:7px; vertical-align:1px; background:#c3cbd8;}
+.dot.ok{background:#2e9e63;} .dot.err{background:var(--red);} .dot.run{background:#e0a000;} .dot.off{background:#c3cbd8;}
+.gh-form label{display:block; font-size:12px; font-weight:600; color:var(--muted); margin-bottom:12px;}
+.gh-form input{
+  display:block; width:100%; margin-top:6px; height:44px; padding:0 12px;
+  border:1px solid var(--line); border-radius:11px; background:#fcfcfd;
+  font:inherit; font-size:14px; outline:none; box-sizing:border-box;
+}
+.gh-form input:focus{border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); background:#fff;}
+.gh-form .row2{display:flex; gap:10px;}
+.gh-form .row2 label{flex:1 1 0;}
+#gh-status{font-weight:600; text-align:right; line-height:1.4;}
+
+/* ---------- 底部导航 ---------- */
+.tabbar{
+  position:fixed; left:0; right:0; bottom:0; z-index:40; display:flex; justify-content:center;
+  background:rgba(255,255,255,.97); backdrop-filter:blur(14px);
+  border-top:1px solid var(--line); padding-bottom:env(safe-area-inset-bottom);
+}
+/* 宽屏时按钮聚拢成 560px 一栏，不要摊到两端 */
+.tabbar button{flex:0 1 140px; height:60px; border:0; background:none; color:var(--muted); cursor:pointer;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; font-size:11px;}
+.tabbar button.on{color:var(--accent);}
+.tabbar svg{width:21px; height:21px; stroke:currentColor; fill:none; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round;}
+
+/* ---------- toast / modal ---------- */
+#toast{position:fixed; left:50%; bottom:calc(84px + env(safe-area-inset-bottom)); transform:translate(-50%,10px);
+  background:rgba(26,29,33,.94); color:#fff; padding:10px 16px; border-radius:12px; font-size:14px;
+  opacity:0; pointer-events:none; transition:.22s; z-index:90; max-width:86vw; text-align:center; line-height:1.5;}
+#toast.on{opacity:1; transform:translate(-50%,0);}
+#modal-root{position:fixed; inset:0; z-index:100; display:none; align-items:center; justify-content:center; padding:20px;}
+#modal-root.on{display:flex;}
+.mask{position:absolute; inset:0; background:rgba(16,24,40,.42); backdrop-filter:blur(2px);}
+.dialog{position:relative; width:100%; max-width:380px; background:#fff; border-radius:18px; padding:20px;
+  box-shadow:0 20px 60px rgba(16,24,40,.24); animation:pop .18s ease-out;}
+@keyframes pop{from{transform:scale(.96); opacity:.6;} to{transform:scale(1); opacity:1;}}
+.dialog h3{margin:0 0 8px; font-size:17px;}
+.dialog .bd{font-size:14px; color:var(--muted); line-height:1.65;}
+.dialog .ft{margin-top:18px; display:flex; flex-direction:column; gap:8px;}
+.banner{background:var(--amber-soft); border:1px solid #f3ddb4; color:#8a5a00; border-radius:12px;
+  padding:10px 12px; font-size:13px; margin-bottom:12px; line-height:1.55;}
+.banner.err{background:var(--red-soft); border-color:#f3c9cb; color:#a1232b;}
+.fetchbar{display:flex; align-items:center; gap:8px; font-size:12px; color:var(--muted); margin-bottom:10px;}
+.spin{width:12px; height:12px; border:2px solid #d9dee6; border-top-color:var(--accent); border-radius:50%; animation:sp .8s linear infinite; flex:0 0 auto;}
+@keyframes sp{to{transform:rotate(360deg);}}
+@media (min-width:600px){ .wrap{padding-left:20px; padding-right:20px;} }
+@media (prefers-reduced-motion:reduce){ *{animation:none !important; transition:none !important;} }
+</style>
+</head>
+<body>
+
+<header class="topbar" id="topbar">
+  <div class="wrap">
+    <div class="brand"><span class="dot"></span><span id="top-title">生词背诵</span></div>
+  </div>
+</header>
+
+<main id="app"></main>
+
+<nav class="tabbar" id="tabbar">
+  <button data-tab="home" class="on">
+    <svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V20a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1V9.5"/></svg>
+    <span>首页</span>
+  </button>
+  <button data-tab="study">
+    <svg viewBox="0 0 24 24"><rect x="3" y="7" width="13" height="13" rx="2"/><path d="M7 4h12a2 2 0 0 1 2 2v12"/></svg>
+    <span>学习</span>
+  </button>
+  <button data-tab="library">
+    <svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg>
+    <span>词库</span>
+  </button>
+  <button data-tab="settings">
+    <svg viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 12h4M12 12h8M4 17h11M19 17h1"/><circle cx="15" cy="7" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="17" cy="17" r="2"/></svg>
+    <span>设置</span>
+  </button>
+</nav>
+
+<div id="toast"></div>
+<div id="modal-root"><div class="mask" data-modal-mask></div><div class="dialog" id="dialog"></div></div>
+
+<script>
+(function(){
+'use strict';
+
+/* =====================================================================
+   0. 常量
+   ===================================================================== */
+var LS_KEY = 'vocab_srs_v1';
+var BAK_KEY = 'vocab_srs_v1_bak';
+var DAY = 86400000;
+var LONGMAN_URL = 'https://api.pearson.com/v2/dictionaries/ldoce5/entries';
+var DEFAULT_SETTINGS = {
+  newPerDay: 10,        // 每天新学数量
+  reviewLimit: 50,      // 每天复习上限
+  fetchLongman: true,   // 自动抓取朗文释义
+  againMinutes: 10,     // 「忘记」后多久再现
+  efMax: 2.8,           // EF 上限
+  hardFactor: 1.2,      // 「困难」间隔系数
+  easyFactor: 1.3,      // 「轻松」间隔系数
+  autoMasterDays: 0     // >0 时间隔达到该天数自动标记掌握（0=关闭）
+};
+
+/* =====================================================================
+   1. 纯逻辑区（不碰 DOM / 不碰存储，可单独跑单测）
+   ===================================================================== */
+/* PURE_START */
+function clamp(v, lo, hi){ return Math.min(hi, Math.max(lo, v)); }
+function pad2(n){ return n < 10 ? '0' + n : '' + n; }
+
+function dayKey(ts){ var d = new Date(ts); return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
+function dayStart(ts){ var d = new Date(ts); d.setHours(0,0,0,0); return d.getTime(); }
+function dayEnd(ts){ var d = new Date(ts); d.setHours(23,59,59,999); return d.getTime(); }
+function shiftDay(ts, n){ var d = new Date(ts); d.setHours(0,0,0,0); d.setDate(d.getDate() + n); return d.getTime(); }
+
+/**
+ * SM-2 核心。四档评分映射 quality：忘记=1 / 困难=3 / 良好=4 / 轻松=5
+ * EF' = EF + (0.1 - (5-q)*(0.08 + (5-q)*0.02))，钳制 [1.3, efMax]
+ */
+function schedule(srs, q, s, now){
+  s = s || DEFAULT_SETTINGS;
+  now = now || Date.now();
+  var ef0 = typeof srs.ef === 'number' ? srs.ef : 2.5;
+  var reps = srs.reps | 0;
+  var ivl  = srs.interval | 0;
+  var efMax = typeof s.efMax === 'number' ? s.efMax : 2.8;
+  var ef = clamp(ef0 + 0.1 - (5 - q) * (0.08 + (5 - q) * 0.02), 1.3, efMax);
+
+  if (q < 3) {
+    return {
+      ef: ef, interval: 0, reps: 0, lapses: (srs.lapses | 0) + 1,
+      due: now + (typeof s.againMinutes === 'number' ? s.againMinutes : 10) * 60000,
+      requeue: true, efFrom: ef0
+    };
+  }
+
+  // 间隔用「更新前」的 EF 计算（SM-2 原文顺序：先算间隔，再调 EF），EF' 供下一次使用
+  var days;
+  if (reps === 0)      days = q === 3 ? 1 : q === 4 ? 2 : 4;
+  else if (reps === 1) days = q === 3 ? 3 : q === 4 ? 6 : 8;
+  else {
+    var f = q === 3 ? (s.hardFactor || 1.2) : q === 5 ? (s.easyFactor || 1.3) : 1;
+    days = Math.round(ivl * ef0 * f);
+  }
+  days = Math.max(1, days);
+
+  return {
+    ef: ef, interval: days, reps: reps + 1, lapses: srs.lapses | 0,
+    due: dayStart(now) + days * DAY, requeue: false, efFrom: ef0
+  };
+}
+
+/** 复习 4 张插 1 张新词 */
+function interleave(reviews, news, ratio){
+  var out = [], i = 0, j = 0, r = ratio || 4;
+  while (i < reviews.length || j < news.length) {
+    for (var k = 0; k < r && i < reviews.length; k++) out.push(reviews[i++]);
+    if (j < news.length) out.push(news[j++]);
+  }
+  return out;
+}
+
+/** 组装今天的队列（新词/复习额度独立扣减） */
+function buildQueueData(words, days, s, now){
+  now = now || Date.now();
+  s = s || DEFAULT_SETTINGS;
+  var tk = dayKey(now);
+  var today = (days && days[tk]) || { newCount: 0, reviewCount: 0 };
+  var revQuota = Math.max(0, (s.reviewLimit | 0) - (today.reviewCount | 0));
+  var newQuota = Math.max(0, (s.newPerDay | 0) - (today.newCount | 0));
+  var end = dayEnd(now);
+
+  var live = words.filter(function(w){ return w && !w.deleted && !w.mastered; });
+  var dueAll = live.filter(function(w){ return w.srs && w.srs.lastReview && w.srs.due <= end; })
+                   .sort(function(a, b){ return a.srs.due - b.srs.due; });
+  var freshAll = live.filter(function(w){ return w.srs && !w.srs.lastReview; })
+                    .sort(function(a, b){ return (a.createdAt || 0) - (b.createdAt || 0); });
+
+  var reviews = dueAll.slice(0, revQuota).map(function(w){ return { id: w.id, kind: 'review' }; });
+  var news    = freshAll.slice(0, newQuota).map(function(w){ return { id: w.id, kind: 'new' }; });
+
+  return {
+    queue: interleave(reviews, news, 4),
+    dueAll: dueAll.length,
+    freshAll: freshAll.length,
+    revQuota: revQuota,
+    newQuota: newQuota,
+    today: today
+  };
+}
+
+/** 连续打卡天数 */
+function computeStreak(days, now){
+  now = now || Date.now();
+  function active(k){ var x = days[k]; return !!(x && ((x.newCount | 0) + (x.reviewCount | 0)) > 0); }
+  var cursor = dayStart(now), n = 0, guard = 0;
+  if (!active(dayKey(cursor))) cursor = shiftDay(cursor, -1);
+  while (active(dayKey(cursor)) && guard++ < 4000) { n++; cursor = shiftDay(cursor, -1); }
+  return n;
+}
+
+/** 解析粘贴/文件内容 → 生词列表 */
+function parseImport(text, existingKeys){
+  var lines = String(text == null ? '' : text).replace(/\r\n?/g, '\n').split('\n');
+  var out = [], seen = {}, dup = 0, bad = [], badCount = 0;
+  for (var li = 0; li < lines.length; li++) {
+    var line = lines[li].replace(/^\uFEFF/, '').trim();
+    if (!line || line.charAt(0) === '#') continue;
+
+    var term = '', def = '';
+    var m = line.match(/[|｜\t]/);
+    if (m) {
+      var i = line.indexOf(m[0]);
+      term = line.slice(0, i);
+      def = line.slice(i + 1);
+    } else {
+      var ci = line.indexOf(',');
+      if (ci > 0) { term = line.slice(0, ci); def = line.slice(ci + 1); }
+      else { term = line; }
+    }
+    term = String(term).trim().replace(/^["'\s]+|["'\s]+$/g, '');
+    def  = String(def).trim().replace(/^["'\s]+|["'\s]+$/g, '');
+
+    if (!term || !/[A-Za-z]/.test(term)) { badCount++; if (bad.length < 5) bad.push(line); continue; }
+    var key = term.toLowerCase();
+    if (existingKeys.has ? existingKeys.has(key) : existingKeys[key]) { dup++; continue; }
+    if (seen[key]) { dup++; continue; }
+    seen[key] = 1;
+    out.push({ term: term, userDef: def, key: key });
+  }
+  return { items: out, dup: dup, bad: badCount, badLines: bad };
+}
+
+/** 间隔的展示文案 */
+function gapText(days, againMinutes){
+  if (!days || days <= 0) return (typeof againMinutes === 'number' ? againMinutes : 10) + ' 分钟';
+  if (days < 30) return days + ' 天';
+  if (days < 365) return (days / 30).toFixed(days % 30 === 0 ? 0 : 1) + ' 个月';
+  return (days / 365).toFixed(1) + ' 年';
+}
+/* PURE_END */
+
+/* =====================================================================
+   2. DOM 小工具
+   ===================================================================== */
+function $(sel, root){ return (root || document).querySelector(sel); }
+function esc(s){
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
+    return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+  });
+}
+function uid(){ return 'w' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+function sleep(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
+function fmtDate(ts){
+  if (!ts) return '—';
+  var d = new Date(ts);
+  return (d.getMonth() + 1) + '月' + d.getDate() + '日';
+}
+function fmtBytes(n){
+  if (n < 1024) return n + ' B';
+  if (n < 1048576) return (n / 1024).toFixed(1) + ' KB';
+  return (n / 1048576).toFixed(2) + ' MB';
+}
+
+var toastTimer = null;
+function toast(msg, ms){
+  var t = $('#toast');
+  t.textContent = msg;
+  t.classList.add('on');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ t.classList.remove('on'); }, ms || 2400);
+}
+
+var modalResolve = null;
+function showModal(opt){
+  var root = $('#modal-root'), dlg = $('#dialog');
+  dlg.innerHTML =
+    '<h3>' + esc(opt.title || '') + '</h3>' +
+    '<div class="bd">' + (opt.body || '') + '</div>' +
+    '<div class="ft">' +
+      (opt.actions || [{ id: 'ok', label: '好' }]).map(function(a){
+        return '<button class="btn ' + (a.danger ? 'danger' : a.primary ? 'primary' : '') + ' block" data-mid="' + esc(a.id) + '">' + esc(a.label) + '</button>';
+      }).join('') +
+    '</div>';
+  root.classList.add('on');
+  return new Promise(function(resolve){
+    modalResolve = function(v){
+      root.classList.remove('on');
+      modalResolve = null;
+      resolve(v);
+    };
+    dlg.querySelectorAll('[data-mid]').forEach(function(b){
+      b.addEventListener('click', function(){ modalResolve(b.getAttribute('data-mid')); });
+    });
+    $('[data-modal-mask]').addEventListener('click', function once(){
+      $('[data-modal-mask]').removeEventListener('click', once);
+      if (modalResolve) modalResolve('cancel');
+    });
+  });
+}
+
+/* =====================================================================
+   3. 状态与持久化
+   ===================================================================== */
+var DB = null;
+var storageOK = true;
+
+function freshDB(){
+  return {
+    version: 1,
+    settings: Object.assign({}, DEFAULT_SETTINGS),
+    words: [],
+    stats: { days: {} },
+    meta: { savedAt: 0, lastExport: 0, deviceId: uid(), syncState: 'local', bakDay: '',
+            settingsAt: 0, clearedAt: 0 }
+  };
+}
+
+function normalizeWord(w){
+  if (!w || !w.term) return null;
+  w.id = w.id || uid();
+  w.term = String(w.term).trim();
+  w.key = w.key || w.term.toLowerCase();
+  w.userDef = w.userDef || '';
+  w.mastered = !!w.mastered;
+  w.deleted = !!w.deleted;
+  w.status = w.status || (w.mastered ? 'mastered' : 'new');
+  w.createdAt = w.createdAt || Date.now();
+  w.updatedAt = w.updatedAt || w.createdAt;
+  w.longman = w.longman || { state: 'idle' };
+  var s = w.srs || {};
+  w.srs = {
+    ef: typeof s.ef === 'number' ? s.ef : 2.5,
+    interval: s.interval | 0,
+    reps: s.reps | 0,
+    lapses: s.lapses | 0,
+    due: typeof s.due === 'number' ? s.due : w.createdAt,
+    lastGrade: typeof s.lastGrade === 'number' ? s.lastGrade : null,
+    lastReview: s.lastReview || null,
+    history: Array.isArray(s.history) ? s.history.slice(-20) : []
+  };
+  return w;
+}
+
+function migrate(d){
+  var db = freshDB();
+  if (!d || typeof d !== 'object') return db;
+  db.settings = Object.assign({}, DEFAULT_SETTINGS, d.settings || {});
+  db.words = (Array.isArray(d.words) ? d.words : []).map(normalizeWord).filter(Boolean);
+  db.stats = d.stats && typeof d.stats === 'object' ? d.stats : { days: {} };
+  db.stats.days = db.stats.days || {};
+  db.meta = Object.assign(db.meta, d.meta || {});
+  normalizeDays(db.stats.days, db.meta.deviceId);
+  return db;
+}
+
+/** 打卡记录按设备分开计数，多设备合并才不会重复累加 */
+function normalizeDays(days, deviceId){
+  Object.keys(days).forEach(function(k){
+    var d = days[k];
+    if (!d || typeof d !== 'object') { days[k] = { newCount: 0, reviewCount: 0, dev: {} }; return; }
+    if (!d.dev || typeof d.dev !== 'object') {
+      d.dev = {};
+      if ((d.newCount | 0) || (d.reviewCount | 0)) {
+        d.dev[deviceId || 'legacy'] = { n: d.newCount | 0, r: d.reviewCount | 0 };
+      }
+    }
+    var n = 0, r = 0;
+    Object.keys(d.dev).forEach(function(id){
+      var c = d.dev[id] || {};
+      c.n = Math.max(0, c.n | 0);
+      c.r = Math.max(0, c.r | 0);
+      n += c.n; r += c.r;
+    });
+    d.newCount = n; d.reviewCount = r;
+  });
+  return days;
+}
+
+var bootNotice = '';
+function loadDB(){
+  var raw = null;
+  try { raw = localStorage.getItem(LS_KEY); }
+  catch (e) { storageOK = false; return freshDB(); }
+
+  if (raw) {
+    try { return migrate(JSON.parse(raw)); }
+    catch (e) {
+      // 主数据损坏 → 退回每日快照
+      try {
+        var bak = localStorage.getItem(BAK_KEY);
+        if (bak) {
+          var db = migrate(JSON.parse(bak));
+          bootNotice = '检测到主数据损坏，已从每日快照恢复（' + dayKey(db.meta.savedAt || Date.now()) + '）';
+          return db;
+        }
+      } catch (e2) {}
+    }
+  }
+  return freshDB();
+}
+
+var saveTimer = null, savePending = false;
+function save(){
+  savePending = true;
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(flushSave, 250);
+}
+/** 立即落盘（清空、导入这类关键操作不能等防抖） */
+function saveNow(){
+  savePending = true;
+  clearTimeout(saveTimer);
+  flushSave();
+}
+function flushSave(){
+  if (!savePending) return;
+  savePending = false;  DB.meta.savedAt = Date.now();
+  try {
+    // 每日首次保存时留一份昨日快照，防误操作/坏数据
+    var today = dayKey(Date.now());
+    if (DB.meta.bakDay !== today) {
+      try {
+        var prev = localStorage.getItem(LS_KEY);
+        if (prev) localStorage.setItem(BAK_KEY, prev);
+      } catch (e2) {}
+      DB.meta.bakDay = today;
+    }
+    localStorage.setItem(LS_KEY, JSON.stringify(DB));
+    if (!SYNC_INTERNAL) schedulePush();
+  } catch (e) {
+    storageOK = false;
+    toast('保存失败：浏览器存储空间可能已满，请立刻导出备份', 6000);
+  }
+}
+
+function byId(id){
+  for (var i = 0; i < DB.words.length; i++) if (DB.words[i].id === id) return DB.words[i];
+  return null;
+}
+function byKey(key){
+  for (var i = 0; i < DB.words.length; i++) if (DB.words[i].key === key) return DB.words[i];
+  return null;
+}
+
+function bumpStat(field){
+  var tk = dayKey(Date.now());
+  var d = DB.stats.days[tk] || (DB.stats.days[tk] = { newCount: 0, reviewCount: 0 });
+  if (!d.dev) normalizeDays((function(){ var o = {}; o[tk] = d; return o; })(), DB.meta.deviceId);
+  var me = DB.meta.deviceId || 'me';
+  var cell = d.dev[me] || (d.dev[me] = { n: 0, r: 0 });
+  if (field === 'newCount') cell.n = (cell.n | 0) + 1; else cell.r = (cell.r | 0) + 1;
+  d.newCount = (d.newCount | 0) + 1;
+  if (field !== 'newCount') d.reviewCount = (d.reviewCount | 0) + 1;
+}
+
+/* =====================================================================
+   4. 视图路由
+   ===================================================================== */
+var view = 'home';
+var TITLES = { home: '生词背诵', study: '学习中', library: '词库', settings: '设置' };
+
+function go(v){
+  view = v;
+  render();
+  window.scrollTo(0, 0);
+  document.querySelectorAll('#tabbar button').forEach(function(b){
+    b.classList.toggle('on', b.getAttribute('data-tab') === v);
+  });
+  $('#top-title').textContent = TITLES[v] || '生词背诵';
+}
+
+function render(){
+  var app = $('#app');
+  if (view === 'home')      app.innerHTML = homeHTML();
+  else if (view === 'study')     app.innerHTML = studyHTML();
+  else if (view === 'library')   app.innerHTML = libraryHTML();
+  else if (view === 'settings')  app.innerHTML = settingsHTML();
+  $('#topbar').classList.toggle('with-line', view !== 'home');
+}
+
+/* =====================================================================
+   5. 首页
+   ===================================================================== */
+function homeHTML(){
+  var q = buildQueueData(DB.words, DB.stats.days, DB.settings);
+  var streak = computeStreak(DB.stats.days);
+  var total = DB.words.filter(function(w){ return !w.deleted; }).length;
+  var mastered = DB.words.filter(function(w){ return !w.deleted && w.mastered; }).length;
+
+  var dueShown = Math.min(q.dueAll, q.revQuota);
+  var newShown = Math.min(q.freshAll, q.newQuota);
+  var cards = dueShown + newShown;
+  var est = Math.max(1, Math.round(cards * 16 / 60));
+
+  var warn = '';
+  if (!storageOK) {
+    warn += '<div class="banner err">当前浏览器禁用了本地存储，数据无法自动保存。请改用 Chrome / Edge 打开，并立刻在设置里导出备份。</div>';
+  }
+  if (DB.meta.lastExport && Date.now() - DB.meta.lastExport > 7 * DAY) {
+    warn += '<div class="banner">已经 ' + Math.floor((Date.now() - DB.meta.lastExport) / DAY) + ' 天没导出备份了，建议去设置页存一份 JSON。</div>';
+  }
+
+  if (total === 0) {
+    return '<div class="wrap">' +
+      warn +
+      '<h1 class="h1">还没有生词</h1>' +
+      '<p class="sub">先去词库导入词表，释义会自动从朗文抓取。</p>' +
+      '<div class="panel card-shadow" style="margin-top:16px; text-align:center; padding:28px 16px;">' +
+        '<div style="font-size:34px; line-height:1;">📥</div>' +
+        '<div style="margin:10px 0 4px; font-weight:700;">粘贴或上传词表</div>' +
+        '<div class="sub" style="margin-bottom:16px;">每行一个单词，格式 <code style="background:#eef1f5;padding:1px 5px;border-radius:4px;">word | 释义</code>（释义可留空）</div>' +
+        '<button class="btn primary big" data-act="goto-import">去导入生词</button>' +
+      '</div>' +
+    '</div>';
+  }
+
+  var banner = '';
+  var pending = DB.words.filter(function(w){
+    return !w.deleted && w.longman && (w.longman.state === 'queued' || w.longman.state === 'loading');
+  }).length;
+  if (pending > 0 && DB.settings.fetchLongman) {
+    banner = '<div class="fetchbar"><span class="spin"></span><span>朗文释义抓取中，还剩 ' + pending + ' 个</span></div>';
+  }
+
+  return '<div class="wrap">' +
+    warn + banner +
+    '<h1 class="h1">' + (cards > 0 ? '今天有 ' + cards + ' 张卡' : '今天已经清空') + '</h1>' +
+    '<p class="sub">' + (cards > 0 ? '预计 ' + est + ' 分钟 · 新词和复习分开计算' : '想加练就去词库挑几个词') + '</p>' +
+
+    '<div class="stats">' +
+      '<div class="stat ' + (dueShown ? 'hero' : '') + '">' +
+        '<div class="num">' + dueShown + '</div>' +
+        '<div class="lab">待复习</div>' +
+      '</div>' +
+      '<div class="stat">' +
+        '<div class="num">' + (q.today.newCount | 0) + '<span class="of">/' + DB.settings.newPerDay + '</span></div>' +
+        '<div class="lab">今日新学</div>' +
+      '</div>' +
+      '<div class="stat">' +
+        '<div class="num">' + streak + '</div>' +
+        '<div class="lab">连续打卡</div>' +
+      '</div>' +
+    '</div>' +
+
+    '<button class="btn primary big" data-act="start" ' + (cards ? '' : 'disabled') + '>' +
+      (cards ? '开始学习' : '今天的任务已完成') +
+    '</button>' +
+
+    '<div class="panel" style="margin-top:14px;">' +
+      '<div class="kv"><span>今日复习</span><b>' + (q.today.reviewCount | 0) + ' / ' + DB.settings.reviewLimit + '</b></div>' +
+      '<div class="kv"><span>到期复习总数</span><b>' + q.dueAll + '</b></div>' +
+      '<div class="kv"><span>待学新词</span><b>' + q.freshAll + '</b></div>' +
+      '<div class="kv"><span>词库 / 已掌握</span><b>' + total + ' / ' + mastered + '</b></div>' +
+      (q.dueAll > q.revQuota
+        ? '<div class="hint" style="margin:8px 0 0;">今日复习额度只剩 ' + q.revQuota + ' 张，剩余 ' + (q.dueAll - q.revQuota) + ' 张明天继续。</div>'
+        : '') +
+      (q.freshAll > q.newQuota && q.newQuota === 0
+        ? '<div class="hint" style="margin:8px 0 0;">今日新学额度已满（' + DB.settings.newPerDay + ' 个），明天再来。</div>'
+        : '') +
+    '</div>' +
+  '</div>';
+}
+
+/* =====================================================================
+   6. 学习流程
+   ===================================================================== */
+var SS = { queue: [], idx: 0, flipped: false, active: false, done: false, startedAt: 0, newDone: 0, revDone: 0 };
+
+function startSession(){
+  var q = buildQueueData(DB.words, DB.stats.days, DB.settings);
+  if (!q.queue.length) { toast('今天没有需要学习的卡片'); return; }
+  SS.queue = q.queue;
+  SS.idx = 0;
+  SS.flipped = false;
+  SS.active = true;
+  SS.done = false;
+  SS.startedAt = Date.now();
+  SS.newDone = 0;
+  SS.revDone = 0;
+  go('study');
+}
+
+function gradeLabel(g){
+  return g === 1 ? '忘记' : g === 3 ? '困难' : g === 4 ? '良好' : '轻松';
+}
+
+function backHTML(w){
+  var L = w.longman || {};
+  var out = '';
+  if (L.state === 'ok' && L.entries && L.entries.length) {
+    L.entries.forEach(function(e, i){
+      out += '<div class="sense">';
+      out += '<div class="pos">' + esc(e.pos || '') +
+        (i === 0 && L.ipa ? '<span class="ipa">' + esc(L.ipa) + '</span>' : '') +
+        (i === 0 && L.audio ? '<button class="spk" data-act="say" data-src="' + esc(L.audio) + '" aria-label="发音">🔊</button>' : '') +
+        '</div>';
+      out += '<div class="def">' + esc((e.defs || []).join(' / ')) + '</div>';
+      if (e.example) out += '<div class="ex">' + esc(e.example) + '</div>';
+      out += '</div>';
+    });
+    if (L.note) out += '<div class="note">' + esc(L.note) + '</div>';
+  } else if (L.state === 'loading' || L.state === 'queued') {
+    out = '<div class="muted" style="display:flex;align-items:center;gap:8px;"><span class="spin"></span>朗文释义获取中…</div>';
+  } else if (L.state === 'notfound') {
+    out = '<div class="muted">朗文词库未收录这个单词。</div>';
+  } else if (L.state === 'error') {
+    out = '<div class="muted">释义获取失败（' + esc(L.err || '网络错误') + '）</div>' +
+          '<div style="margin-top:8px;"><button class="btn tiny" data-act="retry" data-id="' + esc(w.id) + '">重试获取</button></div>';
+  } else {
+    out = '<div class="muted">释义待获取 <button class="btn tiny" data-act="retry" data-id="' + esc(w.id) + '" style="margin-left:6px;">立即获取</button></div>';
+  }
+  if (w.userDef) {
+    out += '<div class="userdef"><span class="lbl">我的释义</span>' + esc(w.userDef) + '</div>';
+  }
+  return out;
+}
+
+function studyHTML(){
+  if (!SS.active) {
+    var q = buildQueueData(DB.words, DB.stats.days, DB.settings);
+    var n = q.queue.length;
+    return '<div class="wrap">' +
+      '<h1 class="h1">' + (n ? '准备好就开背' : '今天没卡了') + '</h1>' +
+      '<p class="sub">' + (n ? '共 ' + n + ' 张 · 复习 ' + q.queue.filter(function(x){ return x.kind === 'review'; }).length +
+        ' · 新词 ' + q.queue.filter(function(x){ return x.kind === 'new'; }).length : '改天再来，或者去词库加词') + '</p>' +
+      '<div class="panel card-shadow" style="margin-top:16px; text-align:center; padding:26px 16px;">' +
+        '<div style="font-size:30px;">🃏</div>' +
+        '<div class="sub" style="margin:10px 0 16px;">正面看单词，点一下翻面看朗文释义，然后按四档自评。</div>' +
+        '<button class="btn primary big" data-act="start" ' + (n ? '' : 'disabled') + '>开始学习</button>' +
+      '</div>' +
+    '</div>';
+  }
+
+  if (SS.done) {
+    var graded = SS.newDone + SS.revDone;
+    return '<div class="wrap">' +
+      '<div class="panel card-shadow" style="margin-top:24px; text-align:center; padding:32px 18px;">' +
+        '<div style="font-size:38px; line-height:1;">🎉</div>' +
+        '<h1 class="h1" style="margin-top:10px;">本轮完成</h1>' +
+        '<p class="sub">新学 ' + SS.newDone + ' 个 · 复习 ' + SS.revDone + ' 张 · 用时 ' +
+          Math.max(1, Math.round((Date.now() - SS.startedAt) / 60000)) + ' 分钟</p>' +
+        '<div style="margin-top:18px;"><button class="btn primary big" data-act="home">回首页</button></div>' +
+        '<div style="margin-top:10px;"><button class="btn block ghost" data-act="again-session">再来一轮</button></div>' +
+      '</div>' +
+    '</div>';
+  }
+
+  var item = SS.queue[SS.idx];
+  var w = item ? byId(item.id) : null;
+  if (!w) { setTimeout(nextCard, 0); return '<div class="wrap"><div class="empty">加载中…</div></div>'; }
+
+  var total = SS.queue.length;
+
+  var grades = SS.flipped ? gradesHTML(w)
+    : '<button class="btn primary big" data-act="flip">显示释义</button>' +
+      '<div class="kbd-hint">空格翻面 · 点击卡片也可以</div>';
+
+  var kindTag = item.kind === 'new' ? '新词' : item.kind === 'again' ? '重来' : '复习';
+
+  return '<div class="wrap">' +
+    '<div class="study-top">' +
+      '<div class="counter">' + (SS.idx + 1) + '/' + total + '</div>' +
+      '<div class="progress"><i style="width:' + Math.round((SS.idx / total) * 100) + '%"></i></div>' +
+      '<button class="btn tiny ghost" data-act="quit">退出</button>' +
+    '</div>' +
+    '<div class="sub" style="margin-top:-2px;">' + kindTag +
+      ' · EF ' + w.srs.ef.toFixed(2) +
+      ' · 已复习 ' + w.srs.reps + ' 次' +
+      (w.srs.lapses ? ' · 忘过 ' + w.srs.lapses + ' 次' : '') +
+    '</div>' +
+
+    '<div class="card' + (SS.flipped ? ' flip' : '') + '" id="card" data-act="flip">' +
+      '<div class="card-inner">' +
+        '<div class="face front">' +
+          '<div class="term">' + esc(w.term) + '</div>' +
+          (w.longman && w.longman.ipa ? '<div class="term-ipa">' + esc(w.longman.ipa) + '</div>' : '') +
+          '<div class="tap-hint">点一下看释义</div>' +
+        '</div>' +
+        '<div class="face back">' + backHTML(w) + '</div>' +
+      '</div>' +
+    '</div>' +
+
+    '<div id="action-area">' + grades + '</div>' +
+  '</div>';
+}
+
+/** 四档自评按钮，按钮上直接给出「下次复习」预览 */
+function gradesHTML(w){
+  var p3 = schedule(w.srs, 3, DB.settings);
+  var p4 = schedule(w.srs, 4, DB.settings);
+  var p5 = schedule(w.srs, 5, DB.settings);
+  return '<div class="grades">' +
+      '<button class="grade g1" data-act="grade" data-q="1"><span class="gl">忘记</span><span class="gv">' + gapText(0, DB.settings.againMinutes) + '后再现</span></button>' +
+      '<button class="grade g2" data-act="grade" data-q="3"><span class="gl">困难</span><span class="gv">' + gapText(p3.interval) + '后</span></button>' +
+      '<button class="grade g3" data-act="grade" data-q="4"><span class="gl">良好</span><span class="gv">' + gapText(p4.interval) + '后</span></button>' +
+      '<button class="grade g4" data-act="grade" data-q="5"><span class="gl">轻松</span><span class="gv">' + gapText(p5.interval) + '后</span></button>' +
+    '</div>' +
+    '<div class="kbd-hint">键盘：1 忘记 · 2 困难 · 3 良好 · 4 轻松</div>';
+}
+
+function flipCard(){
+  if (!SS.active || SS.done || SS.flipped) return;
+  var w = byId(SS.queue[SS.idx].id);
+  if (!w) return;
+  SS.flipped = true;
+  var c = $('#card');
+  if (c) c.classList.add('flip');
+  // 只替换按钮区，避免整页重绘打断翻转动画
+  var area = $('#action-area');
+  if (area) area.innerHTML = gradesHTML(w);
+}
+
+function submitGrade(q){
+  if (!SS.active || SS.done || !SS.flipped) return;
+  var item = SS.queue[SS.idx];
+  if (!item) return;
+  var w = byId(item.id);
+  if (!w) { nextCard(); return; }
+
+  var wasNew = !w.srs.lastReview;
+  var r = schedule(w.srs, q, DB.settings);
+  var now = Date.now();
+
+  w.srs.ef = Math.round(r.ef * 100) / 100;
+  w.srs.interval = r.interval;
+  w.srs.reps = r.reps;
+  w.srs.lapses = r.lapses;
+  w.srs.due = r.due;
+  w.srs.lastGrade = q;
+  w.srs.lastReview = now;
+  w.srs.history = w.srs.history.concat([{ t: now, grade: q, ivl: r.interval, ef: w.srs.ef }]).slice(-20);
+  w.status = w.mastered ? 'mastered' : (w.srs.reps > 0 ? 'learning' : 'new');
+  w.updatedAt = now;
+
+  if (item.kind !== 'again') {
+    bumpStat(wasNew ? 'newCount' : 'reviewCount');
+    if (wasNew) SS.newDone++; else SS.revDone++;
+  }
+
+  // 自动掌握（可选）
+  if (DB.settings.autoMasterDays > 0 && w.srs.interval >= DB.settings.autoMasterDays) {
+    w.mastered = true;
+    w.status = 'mastered';
+  }
+
+  // 忘记 → 本轮稍后再现（同词只补一次，避免死循环）
+  if (q === 1 && item.kind !== 'again') {
+    var rest = SS.queue.slice(SS.idx + 1);
+    var exists = rest.some(function(x){ return x.id === item.id && x.kind === 'again'; });
+    if (!exists && w.srs.interval === 0) {
+      var at = Math.min(SS.idx + 3, SS.queue.length);
+      SS.queue.splice(at, 0, { id: item.id, kind: 'again' });
+    }
+  }
+
+  save();
+  nextCard();
+}
+
+function nextCard(){
+  SS.flipped = false;
+  SS.idx++;
+  var guard = 0;
+  while (SS.idx < SS.queue.length && !byId(SS.queue[SS.idx].id) && guard++ < 100000) SS.idx++;
+  if (SS.idx >= SS.queue.length) { SS.done = true; render(); return; }
+  render();
+}
+
+/* =====================================================================
+   7. 朗文释义抓取
+   ===================================================================== */
+var fetchQueue = [];
+var fetchRunning = false;
+var refreshTimer = null;
+
+function scheduleRefresh(){
+  clearTimeout(refreshTimer);
+  refreshTimer = setTimeout(function(){
+    var ae = document.activeElement;
+    // 正在输入时不整体重绘，避免打断输入焦点
+    if (ae && (ae.id === 'lib-search' || ae.tagName === 'TEXTAREA' || /^set-/.test(ae.id || ''))) return;
+
+    if (view === 'home' || view === 'library') { render(); return; }
+    // 学习页：只更新未翻面的卡背，别动当前卡片状态
+    if (view === 'study' && SS.active && !SS.done && !SS.flipped) {
+      var item = SS.queue[SS.idx];
+      var w = item && byId(item.id);
+      var back = document.querySelector('.face.back');
+      if (w && back) back.innerHTML = backHTML(w);
+    }
+  }, 400);
+}
+
+function queueFetch(words){
+  var added = 0;
+  for (var i = 0; i < words.length; i++) {
+    var w = words[i];
+    if (!w || w.mastered) continue;
+    w.longman = w.longman || { state: 'idle' };
+    if (w.longman.state === 'ok' || w.longman.state === 'notfound') continue;
+    if (fetchQueue.indexOf(w.id) >= 0) continue;
+    fetchQueue.push(w.id);
+    w.longman.state = 'queued';
+    added++;
+  }
+  if (added) { save(); pumpFetch(); }
+  return added;
+}
+
+async function pumpFetch(){
+  if (fetchRunning) return;
+  fetchRunning = true;
+  while (fetchQueue.length) {
+    var id = fetchQueue.shift();
+    var w = byId(id);
+    if (!w) continue;
+    if (!DB.settings.fetchLongman) {
+      if (w.longman) w.longman.state = 'idle';
+      continue;
+    }
+    w.longman.state = 'loading';
+    scheduleRefresh();
+    try {
+      var r = await longmanLookup(w.term);
+      w.longman = Object.assign({}, w.longman, r, { fetchedAt: Date.now() });
+    } catch (e) {
+      w.longman = Object.assign({}, w.longman, {
+        state: 'error',
+        err: (e && e.name === 'AbortError') ? '超时' : ((e && e.message) || '网络错误'),
+        fetchedAt: Date.now()
+      });
+    }
+    save();
+    scheduleRefresh();
+    await sleep(220);
+  }
+  fetchRunning = false;
+  scheduleRefresh();
+}
+
+async function longmanLookup(term){
+  var url = LONGMAN_URL + '?headword=' + encodeURIComponent(term) + '&limit=10';
+  var ctl = new AbortController();
+  var timer = setTimeout(function(){ ctl.abort(); }, 15000);
+  var res;
+  try {
+    res = await fetch(url, { signal: ctl.signal, mode: 'cors' });
+  } finally {
+    clearTimeout(timer);
+  }
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  var data = await res.json();
+  var results = Array.isArray(data && data.results) ? data.results : [];
+  if (!results.length) return { state: 'notfound', entries: [], ipa: '', audio: '', note: '' };
+
+  var k = String(term).trim().toLowerCase();
+  var exact = results.filter(function(r){ return String(r.headword || '').toLowerCase() === k; });
+  var pool = exact.length ? exact : results;
+
+  // 同一个词有多个词性时，接口返回顺序不固定 → 按「学习者常用度」重排
+  var POS_RANK = { verb: 0, noun: 1, adjective: 2, adverb: 3, 'phrasal verb': 4 };
+  function rank(r){
+    var p = String(r.part_of_speech || '').toLowerCase();
+    return Object.prototype.hasOwnProperty.call(POS_RANK, p) ? POS_RANK[p] : 9;
+  }
+  pool = pool.slice().sort(function(a, b){ return rank(a) - rank(b); });
+
+  var seenPos = {};
+  var entries = [];
+  for (var i = 0; i < pool.length && entries.length < 2; i++) {
+    var r0 = pool[i];
+    var s0 = (r0.senses && r0.senses[0]) || {};
+    var defs = s0.definition;
+    if (typeof defs === 'string') defs = [defs];
+    defs = (defs || []).slice(0, 1);
+    if (!defs.length) continue;
+    var pos = r0.part_of_speech || '';
+    if (seenPos[pos]) continue;
+    seenPos[pos] = 1;
+    var ex = (s0.examples && s0.examples[0]) || null;
+    entries.push({ pos: pos, defs: defs, example: ex ? (ex.text || '') : '' });
+  }
+  if (!entries.length) return { state: 'notfound', entries: [], ipa: '', audio: '', note: '' };
+
+  var ipa = '', audio = '';
+  for (var j = 0; j < pool.length; j++) {
+    var p = (pool[j].pronunciations && pool[j].pronunciations[0]) || null;
+    if (p && p.ipa) {
+      ipa = p.ipa;
+      var arr = p.audio || [];
+      var pick = null;
+      for (var a = 0; a < arr.length; a++) { if (/american/i.test(arr[a].lang || '')) { pick = arr[a]; break; } }
+      if (!pick) pick = arr[0];
+      if (pick && pick.url) audio = /^https?:/i.test(pick.url) ? pick.url : ('https://api.pearson.com' + pick.url);
+      break;
+    }
+  }
+
+  var note = exact.length ? '' : ('朗文词条：' + (pool[0].headword || ''));
+  return { state: 'ok', entries: entries, ipa: ipa ? '/' + ipa + '/' : '', audio: audio, note: note };
+}
+
+function say(text, src){
+  if (src) {
+    try { new Audio(src).play(); return; } catch (e) {}
+  }
+  if (window.speechSynthesis) {
+    try {
+      var u = new SpeechSynthesisUtterance(text);
+      u.lang = 'en-US'; u.rate = 0.9;
+      speechSynthesis.cancel();
+      speechSynthesis.speak(u);
+    } catch (e) {}
+  }
+}
+
+/* =====================================================================
+   8. 词库
+   ===================================================================== */
+var libQ = '', libF = 'all', libLimit = 60, impOpen = false;
+
+function filteredWords(){
+  var q = libQ.trim().toLowerCase();
+  var list = DB.words.filter(function(w){ return !w.deleted; });
+  if (libF === 'new') list = list.filter(function(w){ return !w.mastered && !w.srs.lastReview; });
+  else if (libF === 'learning') list = list.filter(function(w){ return !w.mastered && w.srs.lastReview; });
+  else if (libF === 'mastered') list = list.filter(function(w){ return w.mastered; });
+  if (q) {
+    list = list.filter(function(w){
+      if (w.key.indexOf(q) >= 0) return true;
+      if ((w.userDef || '').toLowerCase().indexOf(q) >= 0) return true;
+      var L = w.longman || {};
+      if (L.state === 'ok' && L.entries) {
+        for (var i = 0; i < L.entries.length; i++) {
+          if (((L.entries[i].defs || []).join(' ')).toLowerCase().indexOf(q) >= 0) return true;
+        }
+      }
+      return false;
+    });
+  }
+  list.sort(function(a, b){ return (b.createdAt || 0) - (a.createdAt || 0); });
+  return list;
+}
+
+function wordMeta(w){
+  if (w.srs.lastReview) {
+    return 'EF ' + w.srs.ef.toFixed(2) + ' · 间隔 ' + (w.srs.interval ? w.srs.interval + ' 天' : '本轮') +
+           ' · 下次 ' + fmtDate(w.srs.due);
+  }
+  return '未学习 · 加入于 ' + fmtDate(w.createdAt);
+}
+
+function wordDefLine(w){
+  var L = w.longman || {};
+  if (L.state === 'ok' && L.entries && L.entries.length) {
+    return (L.entries[0].pos ? L.entries[0].pos + '. ' : '') + (L.entries[0].defs || []).join(' / ');
+  }
+  if (L.state === 'loading' || L.state === 'queued') return '释义获取中…';
+  if (L.state === 'error') return '释义获取失败';
+  if (L.state === 'notfound') return '朗文未收录' + (w.userDef ? ' · ' + w.userDef : '');
+  return w.userDef || '释义待获取';
+}
+
+function wordRowHTML(w){
+  var L = w.longman || {};
+  var tag = w.mastered ? '<span class="tag ok">已掌握</span>'
+          : (!w.srs.lastReview ? '<span class="tag new">新词</span>'
+          : '<span class="tag">学习中</span>');
+  return '<div class="wrow" data-id="' + esc(w.id) + '">' +
+    '<div class="main">' +
+      '<div class="wt">' + esc(w.term) + tag + '</div>' +
+      '<div class="wd">' + esc(wordDefLine(w)) + '</div>' +
+      '<div class="wm">' + esc(wordMeta(w)) + '</div>' +
+    '</div>' +
+    '<div class="acts">' +
+      '<button class="iconbtn ok" data-act="toggle-master" data-id="' + esc(w.id) + '" title="' +
+        (w.mastered ? '取消掌握' : '标记已掌握') + '">' + (w.mastered ? '↺' : '✓') + '</button>' +
+      (L.state === 'error' || L.state === 'idle'
+        ? '<button class="iconbtn" data-act="retry" data-id="' + esc(w.id) + '" title="重新获取释义">↻</button>'
+        : '') +
+      '<button class="iconbtn del" data-act="del" data-id="' + esc(w.id) + '" title="删除">✕</button>' +
+    '</div>' +
+  '</div>';
+}
+
+function libBodyHTML(){
+  var list = filteredWords();
+  var shown = list.slice(0, libLimit);
+  if (!list.length) {
+    return '<div class="empty">' + (DB.words.some(function(w){ return !w.deleted; }) ? '没有匹配的单词' : '词库是空的，先在上面导入一批') + '</div>';
+  }
+  return '<div class="rowlist">' + shown.map(wordRowHTML).join('') + '</div>' +
+    (list.length > shown.length
+      ? '<button class="btn block ghost" data-act="lib-more" style="margin-top:12px;">再显示 60 个（还有 ' + (list.length - shown.length) + ' 个）</button>'
+      : '');
+}
+
+function libraryHTML(){
+  var all = DB.words.filter(function(w){ return !w.deleted; });
+  var counts = {
+    all: all.length,
+    'new': all.filter(function(w){ return !w.mastered && !w.srs.lastReview; }).length,
+    learning: all.filter(function(w){ return !w.mastered && w.srs.lastReview; }).length,
+    mastered: all.filter(function(w){ return w.mastered; }).length
+  };
+  var pending = all.filter(function(w){
+    return w.longman && (w.longman.state === 'queued' || w.longman.state === 'loading');
+  }).length;
+
+  var chips = [['all', '全部'], ['new', '未学'], ['learning', '学习中'], ['mastered', '已掌握']]
+    .map(function(c){
+      return '<button class="chip ' + (libF === c[0] ? 'on' : '') + '" data-act="lib-filter" data-f="' + c[0] + '">' +
+        c[1] + ' ' + counts[c[0]] + '</button>';
+    }).join('');
+
+  var fetchBar = (pending > 0 && DB.settings.fetchLongman)
+    ? '<div class="fetchbar"><span class="spin"></span><span>朗文释义抓取中，还剩 ' + pending + ' 个</span></div>'
+    : '';
+
+  return '<div class="wrap">' +
+    '<details class="imp"' + (impOpen ? ' open' : '') + '>' +
+      '<summary>添加 / 批量导入生词</summary>' +
+      '<div class="imp-bd">' +
+        '<textarea id="imp-text" placeholder="abandon | 放弃&#10;ubiquitous&#10;meticulous | 一丝不苟的"></textarea>' +
+        '<div class="hint">每行一个，「单词」和「释义」用 <code>|</code> 或 Tab 分隔，释义可以留空。支持粘贴 Excel 复制的两列。<br>会跳过重复单词，释义自动从朗文抓取。</div>' +
+        '<div class="row-btns">' +
+          '<button class="btn primary" data-act="do-import">导入</button>' +
+          '<button class="btn" data-act="pick-file">选择 .txt / .csv</button>' +
+        '</div>' +
+        '<input type="file" id="file-words" accept=".txt,.csv,text/plain,text/csv" class="hide">' +
+      '</div>' +
+    '</details>' +
+
+    '<div class="search"><span class="ico">🔍</span><input id="lib-search" type="search" placeholder="搜索单词或释义" value="' + esc(libQ) + '"></div>' +
+    '<div class="chips">' + chips + '</div>' +
+    fetchBar +
+    '<div id="lib-body">' + libBodyHTML() + '</div>' +
+  '</div>';
+}
+
+/* =====================================================================
+   9. 设置
+   ===================================================================== */
+function settingsHTML(){
+  var s = DB.settings;
+  var all = DB.words.filter(function(w){ return !w.deleted; });
+  var bytes = 0;
+  try { bytes = new Blob([JSON.stringify(DB)]).size; } catch (e) { bytes = JSON.stringify(DB).length; }
+
+  function numItem(id, title, desc, val, min, max){
+    return '<div class="set-item">' +
+      '<div><div class="t">' + title + '</div><div class="d">' + desc + '</div></div>' +
+      '<input class="num-in" type="number" id="' + id + '" min="' + min + '" max="' + max + '" value="' + val + '">' +
+    '</div>';
+  }
+
+  return '<div class="wrap">' +
+    '<div class="sec-title">每日节奏</div>' +
+    '<div class="panel">' +
+      numItem('set-new', '每天新学数量', '达到上限后不再推送新词', s.newPerDay, 0, 200) +
+      numItem('set-rev', '每天复习上限', '到期卡片超过上限时顺延到次日', s.reviewLimit, 0, 999) +
+    '</div>' +
+
+    '<div class="sec-title">复习参数（SM-2）</div>' +
+    '<div class="panel">' +
+      numItem('set-again', '「忘记」重现间隔（分钟）', '记为答错，间隔重置，本轮再出现一次', s.againMinutes, 1, 1440) +
+      numItem('set-efmax', '易度因子 EF 上限', '标准 SM-2 区间 1.3 ~ 2.8', s.efMax, 1.3, 5) +
+      numItem('set-hard', '「困难」间隔系数', '间隔 × EF × 该系数', s.hardFactor, 0.5, 2) +
+      numItem('set-easy', '「轻松」间隔系数', '间隔 × EF × 该系数', s.easyFactor, 1, 3) +
+      numItem('set-master', '自动掌握阈值（天）', '间隔达到即自动掌握，0 为关闭', s.autoMasterDays, 0, 365) +
+    '</div>' +
+
+    '<div class="sec-title">释义</div>' +
+    '<div class="panel">' +
+      '<div class="set-item" style="border-bottom:0;">' +
+        '<div><div class="t">自动抓取朗文释义</div><div class="d">来自朗文当代词典（LDOCE5）在线词库</div></div>' +
+        '<button class="switch ' + (s.fetchLongman ? 'on' : '') + '" data-act="toggle-fetch" aria-label="开关"></button>' +
+      '</div>' +
+      (storageOK ? '' : '<div class="banner err" style="margin:0;">本地存储不可用，数据不会自动保存。</div>') +
+    '</div>' +
+
+    '<div class="sec-title">跨设备同步（GitHub 仓库）</div>' +
+    '<div class="panel">' +
+      '<div class="kv" style="margin-bottom:14px;"><span>状态</span><b id="gh-status">' + syncStatusHTML() + '</b></div>' +
+      '<div class="gh-form">' +
+        '<div class="row2">' +
+          '<label>仓库（用户名/仓库名）<input id="gh-repo" type="text" value="' + esc(SYNC.repo) + '" placeholder="Jessicaaa618/-"></label>' +
+          '<label>分支<input id="gh-branch" type="text" value="' + esc(SYNC.branch) + '" placeholder="main"></label>' +
+        '</div>' +
+        '<label>访问令牌<input id="gh-token" type="password" placeholder="' +
+          (SYNC.token ? '已保存，重新填写可覆盖' : '粘贴 fine-grained PAT') + '" autocomplete="off"></label>' +
+      '</div>' +
+      '<div class="row-btns">' +
+        '<button class="btn primary" data-act="gh-save">' + (syncOn() ? '保存并同步' : '开启同步') + '</button>' +
+        (syncOn() ? '<button class="btn" data-act="gh-now">立即同步</button>' +
+                    '<button class="btn ghost" data-act="gh-off">关闭</button>' : '') +
+      '</div>' +
+      '<div class="hint" style="margin-bottom:0;">' +
+        '数据存到仓库里的 <code>' + esc(SYNC.path) + '</code>，换设备填同样的令牌就能看到最新数据。' +
+        '令牌只保存在这台设备的浏览器里，不会写进页面，也不会进导出备份。' +
+        '<br>新建令牌：GitHub → Settings → Developer settings → Personal access tokens → Fine-grained tokens，' +
+        '只勾选这个仓库，权限给 <b>Contents: Read and write</b>。' +
+        '<br><b>注意</b>：仓库是公开的，词表数据文件谁拿到链接都能读。' +
+      '</div>' +
+    '</div>' +
+
+    '<div class="sec-title">备份与恢复</div>' +
+    '<div class="panel">' +
+      '<div class="row-btns">' +
+        '<button class="btn primary" data-act="export">导出 JSON 备份</button>' +
+        '<button class="btn" data-act="pick-json">导入 JSON 恢复</button>' +
+      '</div>' +
+      '<input type="file" id="file-json" accept=".json,application/json" class="hide">' +
+      '<div class="hint" style="margin-top:10px;">备份包含全部生词、SM-2 参数、设置和打卡记录。建议每周导出一次，存到网盘。</div>' +
+      '<div class="kv"><span>上次导出</span><b>' + (DB.meta.lastExport ? fmtDate(DB.meta.lastExport) : '从未') + '</b></div>' +
+      '<div class="kv"><span>词库数量</span><b>' + all.length + ' 个</b></div>' +
+      '<div class="kv"><span>数据占用</span><b>' + fmtBytes(bytes) + ' / 约 5 MB</b></div>' +
+    '</div>' +
+
+    '<div class="sec-title">危险操作</div>' +
+    '<div class="panel">' +
+      '<button class="btn danger block" data-act="clear">清除全部数据</button>' +
+      '<div class="hint" style="margin-bottom:0;">会删除生词、进度和设置，无法撤销。清除前请先导出备份。</div>' +
+    '</div>' +
+
+    '<div class="hint" style="text-align:center; margin-top:18px;">单文件运行 · SM-2 间隔重复 · 释义来自朗文当代词典 · 可选 GitHub 同步</div>' +
+  '</div>';
+}
+
+/* =====================================================================
+   10. 导入 / 导出 / 清除
+   ===================================================================== */
+function addWords(parsed){
+  var now = Date.now();
+  var created = [];
+  parsed.items.forEach(function(it, idx){
+    var w = normalizeWord({
+      id: uid(),
+      term: it.term,
+      key: it.key,
+      userDef: it.userDef,
+      createdAt: now + idx,
+      srs: { ef: 2.5, interval: 0, reps: 0, lapses: 0, due: now, lastReview: null, history: [] },
+      longman: { state: 'idle' }
+    });
+    DB.words.push(w);
+    created.push(w);
+  });
+  save();
+  if (created.length) queueFetch(created);
+  return created;
+}
+
+function handleImportText(text, label){
+  var existing = {};
+  DB.words.forEach(function(w){ if (!w.deleted) existing[w.key] = 1; });
+  var parsed = parseImport(text, existing);
+  if (!parsed.items.length) {
+    toast('没有识别到新单词' + (parsed.dup ? '（' + parsed.dup + ' 个重复）' : '') + (parsed.bad ? '（' + parsed.bad + ' 行格式不对）' : ''));
+    return;
+  }
+  addWords(parsed);
+  render();
+  toast('已添加 ' + parsed.items.length + ' 个' +
+        (parsed.dup ? '，跳过重复 ' + parsed.dup + ' 个' : '') +
+        (parsed.bad ? '，' + parsed.bad + ' 行格式不对' : ''));
+}
+
+function readFileSmart(file){
+  return new Promise(function(resolve, reject){
+    var fr = new FileReader();
+    fr.onload = function(){
+      var buf = fr.result;
+      var text = new TextDecoder('utf-8').decode(buf);
+      if (text.indexOf('\uFFFD') >= 0) {
+        try { text = new TextDecoder('gbk').decode(buf); } catch (e) {}
+      }
+      resolve(text.replace(/^\uFEFF/, ''));
+    };
+    fr.onerror = function(){ reject(fr.error); };
+    fr.readAsArrayBuffer(file);
+  });
+}
+
+function exportJSON(){
+  var payload = {
+    app: 'vocab-srs',
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    settings: DB.settings,
+    stats: DB.stats,
+    words: DB.words.filter(function(w){ return !w.deleted; })
+  };
+  var txt = JSON.stringify(payload, null, 2);
+  var blob = new Blob([txt], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = '生词备份-' + dayKey(Date.now()) + '.json';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 3000);
+  DB.meta.lastExport = Date.now();
+  save(true);
+  if (view === 'settings') render();
+  toast('备份已下载');
+}
+
+async function importJSON(file){
+  var text;
+  try { text = await readFileSmart(file); }
+  catch (e) { toast('文件读取失败'); return; }
+
+  var data;
+  try { data = JSON.parse(text); }
+  catch (e) { toast('不是合法的 JSON 文件'); return; }
+
+  if (!data || !Array.isArray(data.words)) { toast('备份格式不对：缺少 words 列表'); return; }
+
+  var act = await showModal({
+    title: '恢复备份',
+    body: '文件里有 <b>' + data.words.length + '</b> 个生词' +
+          (data.exportedAt ? '，导出于 ' + esc(String(data.exportedAt).slice(0, 10)) : '') +
+          '。<br><br><b>覆盖</b>会清空当前数据；<b>合并</b>会按单词合并，进度取更新的那份。',
+    actions: [
+      { id: 'merge', label: '合并到现有数据', primary: true },
+      { id: 'override', label: '覆盖全部数据', danger: true },
+      { id: 'cancel', label: '取消' }
+    ]
+  });
+  if (!act || act === 'cancel') return;
+
+  var incoming = (data.words || []).map(normalizeWord).filter(Boolean);
+
+  if (act === 'override') {
+    DB = migrate({ settings: data.settings, words: incoming, stats: data.stats, meta: DB.meta });
+    DB.meta.syncState = 'local';
+    DB.meta.settingsAt = Date.now();
+  } else {
+    var map = {};
+    DB.words.forEach(function(w){ map[w.key] = w; });
+    incoming.forEach(function(w){
+      var old = map[w.key];
+      if (!old) { map[w.key] = w; return; }
+      var nt = (w.srs && w.srs.lastReview) || 0;
+      var ot = (old.srs && old.srs.lastReview) || 0;
+      if (nt > ot || (nt === ot && (w.updatedAt || 0) > (old.updatedAt || 0))) map[w.key] = w;
+    });
+    DB.words = Object.keys(map).map(function(k){ return map[k]; });
+
+    if (data.stats && data.stats.days) {
+      Object.keys(data.stats.days).forEach(function(d){
+        var a = DB.stats.days[d] || { newCount: 0, reviewCount: 0 };
+        var b = data.stats.days[d] || {};
+        DB.stats.days[d] = {
+          newCount: Math.max(a.newCount | 0, b.newCount | 0),
+          reviewCount: Math.max(a.reviewCount | 0, b.reviewCount | 0)
+        };
+      });
+    }
+  }
+
+  saveNow();
+  go('home');
+  toast('已恢复 ' + DB.words.filter(function(w){ return !w.deleted; }).length + ' 个生词');
+  queueFetch(DB.words.filter(function(w){ return !w.deleted; }));
+}
+
+async function clearAll(){
+  var a1 = await showModal({
+    title: '清除全部数据？',
+    body: '生词、复习进度、打卡记录和设置都会被删除，<b>无法撤销</b>。<br><br>强烈建议先导出一份 JSON 备份。',
+    actions: [
+      { id: 'cancel', label: '取消', primary: true },
+      { id: 'next', label: '我已了解，继续', danger: true }
+    ]
+  });
+  if (a1 !== 'next') return;
+
+  var a2 = await showModal({
+    title: '最后确认',
+    body: '真的要清空吗？这是最后一次确认。',
+    actions: [
+      { id: 'cancel', label: '算了，别删' },
+      { id: 'ok', label: '确认清除', danger: true }
+    ]
+  });
+  if (a2 !== 'ok') return;
+
+  try {
+    localStorage.removeItem(LS_KEY);
+    localStorage.removeItem(BAK_KEY);
+  } catch (e) {}
+  DB = freshDB();
+  DB.meta.clearedAt = Date.now();   // 标记「这是有意清空」，否则同步会把云端旧数据拉回来
+  saveNow();
+  SS = { queue: [], idx: 0, flipped: false, active: false, done: false, startedAt: 0, newDone: 0, revDone: 0 };
+  fetchQueue = [];
+  go('home');
+  toast('已清空');
+  if (syncOn()) {
+    clearTimeout(pushTimer);
+    pushTimer = null;
+    SYNC.pending = true;
+    saveSyncCfg();
+    syncBusy = true;
+    pushOnly().catch(function(e){
+      syncFail(e);
+      toast('云端清空失败：' + e.message + '，请稍后点「立即同步」', 7000);
+    }).then(function(){ syncBusy = false; refreshSyncStatus(); });
+  }
+}
+
+/* =====================================================================
+   10.5 跨设备同步：把 GitHub 仓库当成数据库
+   - 数据文件 data/vocab.json 用 GitHub Contents API 读写（公开仓库可匿名读，写需要令牌）
+   - 令牌只存本机 localStorage，不进页面代码、不进导出的备份
+   - 合并策略：按 id 并集 + updatedAt 取新；同 key 去重；打卡按设备分别取最大值
+   ===================================================================== */
+var SYNC_KEY = 'vocab_srs_gh_v1';
+var SYNC = {
+  repo: 'Jessicaaa618/-', branch: 'main', path: 'data/vocab.json',
+  token: '', lastSync: 0, sha: '', lastSig: '', pending: false,
+  status: 'off', err: ''
+};
+var SYNC_INTERNAL = false;
+var pushTimer = null, syncBusy = false, lastPullTry = 0;
+
+function loadSyncCfg(){
+  try {
+    var raw = localStorage.getItem(SYNC_KEY);
+    if (!raw) return;
+    var o = JSON.parse(raw);
+    if (!o || typeof o !== 'object') return;
+    if (o.repo) SYNC.repo = o.repo;
+    if (o.branch) SYNC.branch = o.branch;
+    if (o.path) SYNC.path = o.path;
+    if (o.token) SYNC.token = o.token;
+    SYNC.lastSync = o.lastSync | 0;
+    SYNC.sha = o.sha || '';
+    SYNC.lastSig = o.lastSig || '';
+    SYNC.pending = !!o.pending;
+  } catch (e) {}
+}
+function saveSyncCfg(){
+  try {
+    localStorage.setItem(SYNC_KEY, JSON.stringify({
+      repo: SYNC.repo, branch: SYNC.branch, path: SYNC.path, token: SYNC.token,
+      lastSync: SYNC.lastSync, sha: SYNC.sha, lastSig: SYNC.lastSig, pending: SYNC.pending
+    }));
+  } catch (e) {}
+}
+function syncOn(){ return !!(SYNC.token && SYNC.repo && SYNC.repo.indexOf('/') > 0); }
+
+function b64enc(str){
+  var bytes = new TextEncoder().encode(str), bin = '', CH = 0x8000;
+  for (var i = 0; i < bytes.length; i += CH) {
+    bin += String.fromCharCode.apply(null, bytes.subarray(i, Math.min(i + CH, bytes.length)));
+  }
+  return btoa(bin);
+}
+function b64dec(b64){
+  var bin = atob(String(b64).replace(/\s/g, ''));
+  var bytes = new Uint8Array(bin.length);
+  for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return new TextDecoder().decode(bytes);
+}
+function hashStr(s){
+  var h = 5381;
+  for (var i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0;
+  return h.toString(36) + '-' + s.length.toString(36);
+}
+/** 内容的语义指纹：忽略 meta.savedAt，用来判断「有没有实质变化」 */
+function stateSig(db){
+  var ws = (db.words || []).map(function(w){
+    return w.id + ':' + (w.updatedAt || 0) + ':' + (w.deleted ? 1 : 0) + ':' + (w.mastered ? 1 : 0);
+  }).sort().join(',');
+  return hashStr(ws + '#' + JSON.stringify(db.settings || {}) + '#' +
+    JSON.stringify((db.stats && db.stats.days) || {}) + '#' + ((db.meta && db.meta.clearedAt) || 0));
+}
+
+function ghURL(suffix){
+  return 'https://api.github.com/repos/' + SYNC.repo + '/contents/' +
+    SYNC.path.split('/').map(encodeURIComponent).join('/') + suffix;
+}
+function ghHeaders(extra){
+  var h = { 'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' };
+  if (SYNC.token) h['Authorization'] = 'Bearer ' + SYNC.token;
+  if (extra) Object.keys(extra).forEach(function(k){ h[k] = extra[k]; });
+  return h;
+}
+
+async function ghPull(){
+  var r = await fetch(ghURL('?ref=' + encodeURIComponent(SYNC.branch) + '&t=' + Date.now()),
+    { headers: ghHeaders(), cache: 'no-store' });
+  if (r.status === 404) return { none: true };
+  if (r.status === 401) throw new Error('令牌无效或已过期（401）');
+  if (r.status === 403) throw new Error('没有读取权限或被限流（403）');
+  if (!r.ok) throw new Error('读取失败 HTTP ' + r.status);
+  var j = await r.json();
+  if (!j || !j.content) return { none: true };
+  return { db: JSON.parse(b64dec(j.content)), sha: j.sha };
+}
+
+async function ghPush(payloadText, sha){
+  var body = { message: 'sync: ' + new Date().toISOString().slice(0, 19).replace('T', ' '),
+               content: b64enc(payloadText), branch: SYNC.branch };
+  if (sha) body.sha = sha;
+  var r = await fetch(ghURL(''), {
+    method: 'PUT', headers: ghHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify(body)
+  });
+  if (r.status === 409 || r.status === 422) { var e = new Error('conflict'); e.conflict = true; throw e; }
+  if (r.status === 401) throw new Error('令牌无效或已过期（401）');
+  if (r.status === 403) throw new Error('令牌没有写入权限（403），需要 Contents 读写');
+  if (!r.ok) {
+    var t = '';
+    try { t = await r.text(); } catch (e3) {}
+    throw new Error('写入失败 HTTP ' + r.status + (t ? ' · ' + t.slice(0, 120) : ''));
+  }
+  var j = await r.json();
+  return (j && j.content && j.content.sha) || '';
+}
+
+/** 同步用的精简副本：丢掉朗文释义缓存，控制文件体积（各设备自己抓，抓到本地缓存） */
+function slimDB(){
+  var d = JSON.parse(JSON.stringify(DB));
+  (d.words || []).forEach(function(w){ delete w.longman; });
+  d.meta.savedAt = Date.now();
+  delete d.meta.bakDay;
+  return d;
+}
+
+function mergeDB(a, b){
+  var ac = (a.meta && a.meta.clearedAt) || 0;
+  var bc = (b.meta && b.meta.clearedAt) || 0;
+  // 有意「清除全部数据」的一方胜出，否则会被云端旧数据复活
+  if (ac && ac >= bc && ac >= ((b.meta && b.meta.savedAt) || 0)) return a;
+  if (bc && bc > ac && bc >= ((a.meta && a.meta.savedAt) || 0)) return b;
+
+  var out = freshDB();
+  var sa = (a.meta && a.meta.settingsAt) || 0;
+  var sb = (b.meta && b.meta.settingsAt) || 0;
+  out.settings = Object.assign({}, DEFAULT_SETTINGS, (sb > sa ? b.settings : a.settings) || {});
+
+  var byId = {};
+  [a, b].forEach(function(db){
+    (db.words || []).forEach(function(w){
+      if (!w || !w.id) return;
+      var o = byId[w.id];
+      if (!o || (w.updatedAt || 0) > (o.updatedAt || 0)) byId[w.id] = w;
+    });
+  });
+  // 两台设备各自加过同一个词（id 不同，key 相同）→ 按 key 收敛成一条
+  var byKey = {};
+  Object.keys(byId).forEach(function(k){
+    var w = byId[k], prev = byKey[w.key];
+    if (!prev) { byKey[w.key] = w; return; }
+    var wn = w.updatedAt || 0, pn = prev.updatedAt || 0;
+    if (wn > pn || (wn === pn && ((w.srs && w.srs.reps) | 0) > ((prev.srs && prev.srs.reps) | 0))) byKey[w.key] = w;
+  });
+  out.words = Object.keys(byKey).map(function(k){ return byKey[k]; });
+
+  // 同步文件不带朗文缓存，本机已有的就别丢，免得反复重抓
+  var lm = {};
+  (a.words || []).forEach(function(w){
+    if (w.longman && w.longman.state && w.longman.state !== 'idle') lm[w.key] = w.longman;
+  });
+  out.words.forEach(function(w){
+    if ((!w.longman || !w.longman.state || w.longman.state === 'idle') && lm[w.key]) w.longman = lm[w.key];
+  });
+  (b.words || []).forEach(function(w){
+    if (!w.longman) return;
+    out.words.forEach(function(o){
+      if (o.key === w.key && (!o.longman || !o.longman.state || o.longman.state === 'idle')) o.longman = w.longman;
+    });
+  });
+
+  out.stats = { days: {} };
+  [a, b].forEach(function(db){
+    var days = (db.stats && db.stats.days) || {};
+    Object.keys(days).forEach(function(dk){
+      var src = days[dk] || {};
+      var dev = src.dev;
+      if (!dev || typeof dev !== 'object') {
+        dev = {};
+        if ((src.newCount | 0) || (src.reviewCount | 0)) dev.legacy = { n: src.newCount | 0, r: src.reviewCount | 0 };
+      }
+      var tgt = out.stats.days[dk] || (out.stats.days[dk] = { newCount: 0, reviewCount: 0, dev: {} });
+      Object.keys(dev).forEach(function(did){
+        var s = dev[did] || {};
+        var t = tgt.dev[did] || (tgt.dev[did] = { n: 0, r: 0 });
+        t.n = Math.max(t.n | 0, s.n | 0);
+        t.r = Math.max(t.r | 0, s.r | 0);
+      });
+    });
+  });
+  normalizeDays(out.stats.days, out.meta.deviceId);
+
+  out.meta.deviceId = (a.meta && a.meta.deviceId) || out.meta.deviceId;
+  out.meta.lastExport = Math.max((a.meta && a.meta.lastExport) || 0, (b.meta && b.meta.lastExport) || 0);
+  out.meta.settingsAt = Math.max(sa, sb);
+  out.meta.clearedAt = Math.max(ac, bc);
+  out.meta.savedAt = Date.now();
+  return out;
+}
+
+function syncStatusHTML(){
+  if (!syncOn()) return '<span class="dot off"></span>未开启';
+  if (syncBusy) return '<span class="dot run"></span>同步中…';
+  if (SYNC.status === 'error') return '<span class="dot err"></span>' + esc(SYNC.err || '同步失败');
+  var tail = SYNC.pending ? ' · 待上传' : '';
+  return '<span class="dot ok"></span>已同步' + (SYNC.lastSync ? ' · ' + fmtDate(SYNC.lastSync) : '') + tail;
+}
+function refreshSyncStatus(){
+  var el = document.getElementById('gh-status');
+  if (el) el.innerHTML = syncStatusHTML();
+}
+function syncFail(e){
+  syncBusy = false;
+  SYNC.status = 'error';
+  SYNC.err = (e && e.message) || '网络错误';
+  SYNC.pending = true;
+  saveSyncCfg();
+  refreshSyncStatus();
+}
+
+async function pushOnly(){
+  var payload = JSON.stringify(slimDB());
+  var sig = stateSig(DB);
+  if (sig === SYNC.lastSig && SYNC.lastSync) { SYNC.pending = false; saveSyncCfg(); refreshSyncStatus(); return true; }
+  var sha = SYNC.sha;
+  for (var attempt = 0; attempt < 3; attempt++) {
+    try {
+      var newSha = await ghPush(payload, sha);
+      if (newSha) SYNC.sha = newSha;
+      SYNC.lastSig = sig;
+      SYNC.lastSync = Date.now();
+      SYNC.pending = false;
+      SYNC.status = 'ok';
+      SYNC.err = '';
+      saveSyncCfg();
+      refreshSyncStatus();
+      return true;
+    } catch (e) {
+      if (!e.conflict) throw e;
+      // 别的设备刚推过 → 拉下来合并再重推
+      var r = await ghPull();
+      sha = r.none ? '' : r.sha;
+      if (!r.none) {
+        var m = mergeDB(DB, migrate(r.db));
+        SYNC_INTERNAL = true;
+        DB = m;
+        saveNow();
+        SYNC_INTERNAL = false;
+        payload = JSON.stringify(slimDB());
+        sig = stateSig(DB);
+      }
+    }
+  }
+  throw new Error('同步冲突，重试 3 次仍未成功');
+}
+
+async function syncNow(opts){
+  opts = opts || {};
+  if (!syncOn()) { if (opts.manual) toast('先填写仓库和访问令牌'); return false; }
+  if (syncBusy) return false;
+  syncBusy = true;
+  SYNC.status = 'syncing';
+  refreshSyncStatus();
+  try {
+    var remote = await ghPull();
+    var merged, remoteSig = '';
+    if (remote.none) {
+      merged = DB;
+      SYNC.sha = '';
+    } else {
+      var rdb = migrate(remote.db);
+      remoteSig = stateSig(rdb);
+      merged = mergeDB(DB, rdb);
+      SYNC.sha = remote.sha;
+    }
+    if (stateSig(merged) !== stateSig(DB)) {
+      SYNC_INTERNAL = true;
+      DB = merged;
+      saveNow();
+      SYNC_INTERNAL = false;
+      render();
+      if (!remote.none) toast('已拉取云端更新');
+    }
+    syncBusy = false;
+    refreshSyncStatus();
+    if (remote.none || stateSig(DB) !== remoteSig) {
+      await pushOnly();
+    } else {
+      SYNC.lastSig = remoteSig;
+      SYNC.lastSync = Date.now();
+      SYNC.pending = false;
+      SYNC.status = 'ok';
+      SYNC.err = '';
+      saveSyncCfg();
+      refreshSyncStatus();
+    }
+    if (opts.manual) {
+      toast('同步完成，云端 ' + DB.words.filter(function(w){ return !w.deleted; }).length + ' 个生词');
+    }
+    return true;
+  } catch (e) {
+    syncFail(e);
+    if (opts.manual) toast('同步失败：' + e.message, 7000);
+    return false;
+  }
+}
+
+function schedulePush(){
+  if (!syncOn()) return;
+  if (!SYNC.pending) { SYNC.pending = true; saveSyncCfg(); refreshSyncStatus(); }
+  if (pushTimer) return;          // 已排期就不再顺延，否则批量导入时会一直推迟
+  pushTimer = setTimeout(function(){
+    pushTimer = null;
+    if (syncBusy) { schedulePush(); return; }
+    syncBusy = true;
+    pushOnly().catch(syncFail).then(function(){
+      syncBusy = false;
+      refreshSyncStatus();
+      // 推送期间又有改动 → 再排一次
+      if (stateSig(DB) !== SYNC.lastSig) schedulePush();
+    });
+  }, 8000);
+}
+
+function readGhForm(){
+  var r = $('#gh-repo'), b = $('#gh-branch'), t = $('#gh-token');
+  if (r) SYNC.repo = (r.value || '').trim().replace(/^https?:\/\/github\.com\//i, '').replace(/\/+$/, '');
+  if (b) SYNC.branch = (b.value || 'main').trim() || 'main';
+  if (t && t.value.trim()) SYNC.token = t.value.trim();
+}
+async function doGhSave(){
+  readGhForm();
+  if (!SYNC.repo || SYNC.repo.indexOf('/') <= 0) { toast('仓库格式应为 用户名/仓库名，例如 Jessicaaa618/-'); return; }
+  if (!SYNC.token) { toast('请填写访问令牌'); return; }
+  SYNC.sha = '';
+  SYNC.lastSig = '';
+  saveSyncCfg();
+  render();
+  await syncNow({ manual: true });
+}
+async function doGhNow(){
+  if (!syncOn()) { toast('先填好仓库和令牌并保存'); return; }
+  await syncNow({ manual: true });
+}
+async function doGhOff(){
+  var a = await showModal({
+    title: '关闭同步？',
+    body: '只会断开这台设备的同步，本机数据保留，GitHub 仓库里的数据文件也不会被删除。',
+    actions: [
+      { id: 'cancel', label: '取消', primary: true },
+      { id: 'ok', label: '关闭同步', danger: true }
+    ]
+  });
+  if (a !== 'ok') return;
+  SYNC.token = '';
+  SYNC.sha = '';
+  SYNC.lastSig = '';
+  SYNC.lastSync = 0;
+  SYNC.pending = false;
+  SYNC.status = 'off';
+  SYNC.err = '';
+  saveSyncCfg();
+  render();
+  toast('已关闭同步');
+}
+
+loadSyncCfg();
+
+/* =====================================================================
+   11. 事件绑定
+   ===================================================================== */
+document.addEventListener('click', async function(e){
+  var tabBtn = e.target.closest('#tabbar button');
+  if (tabBtn) {
+    var t = tabBtn.getAttribute('data-tab');
+    if (t === 'study' && SS.active && !SS.done) { go('study'); return; }
+    go(t);
+    return;
+  }
+
+  var el = e.target.closest('[data-act]');
+  if (!el) return;
+  var act = el.getAttribute('data-act');
+  var id = el.getAttribute('data-id');
+
+  switch (act) {
+    case 'goto-import':
+      go('library');
+      var d = document.querySelector('details.imp');
+      if (d) { d.open = true; var tx = $('#imp-text'); if (tx) tx.focus(); }
+      break;
+
+    case 'start':
+      startSession();
+      break;
+
+    case 'again-session':
+      SS.active = false; SS.done = false;
+      startSession();
+      break;
+
+    case 'home':
+      go('home');
+      break;
+
+    case 'flip':
+      flipCard();
+      break;
+
+    case 'grade':
+      submitGrade(parseInt(el.getAttribute('data-q'), 10));
+      break;
+
+    case 'quit':
+      SS.active = false;
+      SS.done = false;
+      go('home');
+      break;
+
+    case 'say':
+      say('', el.getAttribute('data-src'));
+      break;
+
+    case 'retry':
+      var w1 = byId(id);
+      if (w1) {
+        w1.longman = Object.assign({}, w1.longman, { state: 'idle' });
+        if (!DB.settings.fetchLongman) DB.settings.fetchLongman = true;
+        queueFetch([w1]);
+        toast('正在重新获取释义');
+      }
+      break;
+
+    case 'toggle-master':
+      var w2 = byId(id);
+      if (w2) {
+        w2.mastered = !w2.mastered;
+        w2.status = w2.mastered ? 'mastered' : (w2.srs.lastReview ? 'learning' : 'new');
+        w2.updatedAt = Date.now();
+        save();
+        render();
+        toast(w2.mastered ? '已标记为掌握，不再进入队列' : '已取消掌握');
+      }
+      break;
+
+    case 'del':
+      var w3 = byId(id);
+      if (!w3) break;
+      var okDel = await showModal({
+        title: '删除单词',
+        body: '「' + esc(w3.term) + '」及其复习进度会被删除。',
+        actions: [
+          { id: 'cancel', label: '取消', primary: true },
+          { id: 'ok', label: '删除', danger: true }
+        ]
+      });
+      if (okDel !== 'ok') break;
+      w3.deleted = true;
+      w3.updatedAt = Date.now();
+      save();
+      render();
+      toast('已删除');
+      break;
+
+    case 'lib-filter':
+      libF = el.getAttribute('data-f');
+      libLimit = 60;
+      render();
+      break;
+
+    case 'lib-more':
+      libLimit += 60;
+      render();
+      break;
+
+    case 'do-import':
+      var ta = $('#imp-text');
+      if (!ta || !ta.value.trim()) { toast('先粘贴一些单词'); break; }
+      handleImportText(ta.value, 'paste');
+      ta.value = '';
+      break;
+
+    case 'pick-file':
+      $('#file-words').click();
+      break;
+
+    case 'toggle-fetch':
+      DB.settings.fetchLongman = !DB.settings.fetchLongman;
+      DB.meta.settingsAt = Date.now();
+      save();
+      render();
+      if (DB.settings.fetchLongman) {
+        var pend = DB.words.filter(function(w){
+          return !w.deleted && w.longman && w.longman.state !== 'ok' && w.longman.state !== 'notfound';
+        });
+        if (pend.length) queueFetch(pend);
+      }
+      toast(DB.settings.fetchLongman ? '已开启自动抓取' : '已关闭自动抓取');
+      break;
+
+    case 'export':
+      exportJSON();
+      break;
+
+    case 'pick-json':
+      $('#file-json').click();
+      break;
+
+    case 'clear':
+      clearAll();
+      break;
+
+    case 'gh-save':
+      doGhSave();
+      break;
+
+    case 'gh-now':
+      doGhNow();
+      break;
+
+    case 'gh-off':
+      doGhOff();
+      break;
+  }
+});
+
+// 搜索框
+document.addEventListener('input', function(e){
+  if (e.target && e.target.id === 'lib-search') {
+    libQ = e.target.value;
+    libLimit = 60;
+    // 只重绘列表区，保持输入焦点
+    var body = $('#lib-body');
+    if (body) body.innerHTML = libBodyHTML();
+    return;
+  }
+
+  // 数字设置项
+  var map = {
+    'set-new': ['newPerDay', 0, 200],
+    'set-rev': ['reviewLimit', 0, 999],
+    'set-again': ['againMinutes', 1, 1440],
+    'set-efmax': ['efMax', 1.3, 5],
+    'set-hard': ['hardFactor', 0.5, 2],
+    'set-easy': ['easyFactor', 1, 3],
+    'set-master': ['autoMasterDays', 0, 365]
+  };
+  if (e.target && map[e.target.id]) {
+    var cfg = map[e.target.id];
+    var v = parseFloat(e.target.value);
+    if (isNaN(v)) return;
+    v = Math.min(cfg[2], Math.max(cfg[1], v));
+    DB.settings[cfg[0]] = v;
+    DB.meta.settingsAt = Date.now();
+    save();
+  }
+});
+
+document.addEventListener('change', function(e){
+  if (!e.target) return;
+  if (e.target.id === 'file-words') {    var f = e.target.files && e.target.files[0];
+    if (!f) return;
+    readFileSmart(f).then(function(text){
+      handleImportText(text, f.name);
+    }).catch(function(){ toast('文件读取失败'); });
+    e.target.value = '';
+  }
+  if (e.target.id === 'file-json') {
+    var f2 = e.target.files && e.target.files[0];
+    if (!f2) return;
+    importJSON(f2);
+    e.target.value = '';
+  }
+});
+
+// 记住导入面板的展开状态（重绘后不收起）
+document.addEventListener('toggle', function(e){
+  if (e.target && e.target.matches && e.target.matches('details.imp')) impOpen = e.target.open;
+}, true);
+
+// 键盘
+document.addEventListener('keydown', function(e){
+  if (e.key === 'Escape' && modalResolve) { modalResolve('cancel'); return; }
+  if (view !== 'study' || !SS.active || SS.done) return;
+  if (e.target && /INPUT|TEXTAREA/.test(e.target.tagName)) return;
+  if (e.key === ' ' || e.key === 'Enter') {
+    e.preventDefault();
+    if (!SS.flipped) flipCard();
+    return;
+  }
+  if (SS.flipped) {
+    var m = { '1': 1, '2': 3, '3': 4, '4': 5 };
+    if (m[e.key]) { e.preventDefault(); submitGrade(m[e.key]); }
+  }
+});
+
+// 离开页面前落盘
+window.addEventListener('beforeunload', function(){ if (savePending) flushSave(); });
+document.addEventListener('visibilitychange', function(){
+  if (document.hidden) {
+    if (savePending) flushSave();
+    // 切走时把未推的改动推上去（学习中的话队列状态不受影响）
+    if (SYNC.pending && syncOn() && !syncBusy) {
+      syncBusy = true;
+      pushOnly().catch(syncFail).then(function(){ syncBusy = false; refreshSyncStatus(); });
+    }
+    return;
+  }
+  // 回到页面：别的设备可能改过，拉一次
+  if (!syncOn() || syncBusy) return;
+  if (SS.active && !SS.done) return;          // 正在背卡，别打断
+  var now = Date.now();
+  if (now - lastPullTry < 20000) return;
+  lastPullTry = now;
+  syncNow({ manual: false }).catch(syncFail);
+});
+
+// 页面停留时的定时拉取（只在没有进行中的学习轮次时）
+setInterval(function(){
+  if (document.hidden || syncBusy || !syncOn()) return;
+  if (SS.active && !SS.done) return;
+  if (pushTimer) return;
+  lastPullTry = Date.now();
+  syncNow({ manual: false }).catch(function(){});
+}, 120000);
+
+/* =====================================================================
+   12. 启动
+   ===================================================================== */
+DB = loadDB();
+
+// 数据迁移后补抓缺失释义（不阻塞首屏）
+setTimeout(function(){
+  if (!DB.settings.fetchLongman) return;
+  var need = DB.words.filter(function(w){
+    return !w.deleted && w.longman && w.longman.state !== 'ok' && w.longman.state !== 'notfound';
+  });
+  if (need.length) queueFetch(need);
+}, 800);
+
+go('home');
+
+// 首屏后拉一次云端：换设备打开时先把云端数据取回来
+if (syncOn()) {
+  setTimeout(function(){ syncNow({ manual: false }).catch(function(){}); }, 1200);
+}
+
+if (bootNotice) {
+  setTimeout(function(){ toast(bootNotice, 7000); }, 500);
+  saveNow();   // 快照恢复后立刻写回主存储
+}
+if (!storageOK) {
+  setTimeout(function(){ toast('本地存储不可用，学习数据无法保存，请改用 Chrome / Edge 打开', 7000); }, 1200);
+}
+
+})();
+</script>
+</body>
+</html>
