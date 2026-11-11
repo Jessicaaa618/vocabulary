@@ -148,6 +148,28 @@ button{font:inherit; color:inherit;}
 .iconbtn.ok{color:var(--green);} .iconbtn.del{color:var(--red);}
 .empty{text-align:center; color:var(--muted); padding:36px 10px; font-size:14px;}
 
+/* ---------- 词库多选 ---------- */
+.lib-bar{display:flex; gap:8px; align-items:center; margin:2px 0 8px;}
+.lib-bar .sp{flex:1;}
+.wrow.ms{cursor:pointer; -webkit-tap-highlight-color:transparent;}
+.wrow.ms .acts{display:none;}
+.wrow.ms .msbox{
+  width:21px; height:21px; flex:0 0 auto; margin-top:2px; border-radius:50%;
+  border:2px solid #cfd6df; background:#fff; color:#fff; font-size:12px; line-height:1;
+  display:flex; align-items:center; justify-content:center; box-sizing:border-box;
+}
+.wrow.sel{border-color:var(--accent); background:var(--accent-soft);}
+.wrow.sel .msbox{background:var(--accent); border-color:var(--accent);}
+.msbar{
+  position:fixed; left:0; right:0; bottom:calc(60px + env(safe-area-inset-bottom)); z-index:45;
+  display:flex; gap:8px; align-items:center; justify-content:flex-end;
+  padding:10px 14px calc(10px + env(safe-area-inset-bottom));
+  background:rgba(255,255,255,.98); border-top:1px solid var(--line);
+  backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+}
+.msbar .cnt{font-size:13px; font-weight:700; margin-right:auto;}
+.wrap.ms-pad{padding-bottom:120px;}
+
 /* ---------- 导入面板 ---------- */
 details.imp{border:1px solid var(--line); border-radius:14px; background:#fff; margin-bottom:12px; overflow:hidden;}
 details.imp > summary{padding:14px; cursor:pointer; font-weight:600; font-size:15px; list-style:none; display:flex; align-items:center; justify-content:space-between;}
@@ -1099,11 +1121,27 @@ function say(text, src){
    8. 词库
    ===================================================================== */
 var libQ = '', libF = 'all', libLimit = 60, impOpen = false;
+var msMode = false, msSel = {};
+
+function msCount(){ return Object.keys(msSel).length; }
+function msBarHTML(){
+  var n = msCount();
+  return '<div class="msbar">' +
+    '<span class="cnt">已选 ' + n + ' 个</span>' +
+    '<button class="btn tiny ghost" data-act="ms-off">退出</button>' +
+    '<button class="btn tiny danger"' + (n ? '' : ' disabled') + ' data-act="ms-del">删除所选</button>' +
+  '</div>';
+}
+
+function todayStart(){
+  var d = new Date(); d.setHours(0, 0, 0, 0); return d.getTime();
+}
 
 function filteredWords(){
   var q = libQ.trim().toLowerCase();
   var list = DB.words.filter(function(w){ return !w.deleted; });
-  if (libF === 'new') list = list.filter(function(w){ return !w.mastered && !w.srs.lastReview; });
+  if (libF === 'today') list = list.filter(function(w){ return (w.createdAt || 0) >= todayStart(); });
+  else if (libF === 'new') list = list.filter(function(w){ return !w.mastered && !w.srs.lastReview; });
   else if (libF === 'learning') list = list.filter(function(w){ return !w.mastered && w.srs.lastReview; });
   else if (libF === 'mastered') list = list.filter(function(w){ return w.mastered; });
   if (q) {
@@ -1147,7 +1185,10 @@ function wordRowHTML(w){
   var tag = w.mastered ? '<span class="tag ok">已掌握</span>'
           : (!w.srs.lastReview ? '<span class="tag new">新词</span>'
           : '<span class="tag">学习中</span>');
-  return '<div class="wrow" data-id="' + esc(w.id) + '">' +
+  var on = !!msSel[w.id];
+  return '<div class="wrow' + (msMode ? ' ms' : '') + (on ? ' sel' : '') + '" data-id="' + esc(w.id) + '"' +
+      (msMode ? ' data-act="ms-toggle"' : '') + '>' +
+    (msMode ? '<div class="msbox">' + (on ? '✓' : '') + '</div>' : '') +
     '<div class="main">' +
       '<div class="wt">' + esc(w.term) + tag + '</div>' +
       '<div class="wd">' + esc(wordDefLine(w)) + '</div>' +
@@ -1180,6 +1221,7 @@ function libraryHTML(){
   var all = DB.words.filter(function(w){ return !w.deleted; });
   var counts = {
     all: all.length,
+    today: all.filter(function(w){ return (w.createdAt || 0) >= todayStart(); }).length,
     'new': all.filter(function(w){ return !w.mastered && !w.srs.lastReview; }).length,
     learning: all.filter(function(w){ return !w.mastered && w.srs.lastReview; }).length,
     mastered: all.filter(function(w){ return w.mastered; }).length
@@ -1188,7 +1230,7 @@ function libraryHTML(){
     return w.longman && (w.longman.state === 'queued' || w.longman.state === 'loading');
   }).length;
 
-  var chips = [['all', '全部'], ['new', '未学'], ['learning', '学习中'], ['mastered', '已掌握']]
+  var chips = [['all', '全部'], ['today', '今日新增'], ['new', '未学'], ['learning', '学习中'], ['mastered', '已掌握']]
     .map(function(c){
       return '<button class="chip ' + (libF === c[0] ? 'on' : '') + '" data-act="lib-filter" data-f="' + c[0] + '">' +
         c[1] + ' ' + counts[c[0]] + '</button>';
@@ -1198,7 +1240,7 @@ function libraryHTML(){
     ? '<div class="fetchbar"><span class="spin"></span><span>朗文释义抓取中，还剩 ' + pending + ' 个</span></div>'
     : '';
 
-  return '<div class="wrap">' +
+  return '<div class="wrap' + (msMode ? ' ms-pad' : '') + '">' +
     '<details class="imp"' + (impOpen ? ' open' : '') + '>' +
       '<summary>添加 / 批量导入生词</summary>' +
       '<div class="imp-bd">' +
@@ -1214,8 +1256,17 @@ function libraryHTML(){
 
     '<div class="search"><span class="ico">🔍</span><input id="lib-search" type="search" placeholder="搜索单词或释义" value="' + esc(libQ) + '"></div>' +
     '<div class="chips">' + chips + '</div>' +
+    '<div class="lib-bar">' +
+      '<button class="btn tiny' + (msMode ? ' primary' : '') + '" data-act="' + (msMode ? 'ms-off' : 'ms-on') + '">' +
+        (msMode ? '完成多选' : '多选') + '</button>' +
+      (msMode ? '<button class="btn tiny" data-act="ms-all">全选当前</button>' +
+                '<button class="btn tiny ghost" data-act="ms-none">清空</button>' : '') +
+      '<span class="sp"></span>' +
+      '<span class="sub">' + filteredWords().length + ' 条</span>' +
+    '</div>' +
     fetchBar +
     '<div id="lib-body">' + libBodyHTML() + '</div>' +
+    (msMode ? msBarHTML() : '') +
   '</div>';
 }
 
@@ -1863,6 +1914,7 @@ document.addEventListener('click', async function(e){
   if (tabBtn) {
     var t = tabBtn.getAttribute('data-tab');
     if (t === 'study' && SS.active && !SS.done) { go('study'); return; }
+    if (t !== 'library') { msMode = false; msSel = {}; }
     go(t);
     return;
   }
@@ -1951,9 +2003,65 @@ document.addEventListener('click', async function(e){
       toast('已删除');
       break;
 
+    case 'ms-on':
+      msMode = true; msSel = {};
+      render();
+      break;
+
+    case 'ms-off':
+      msMode = false; msSel = {};
+      render();
+      break;
+
+    case 'ms-toggle':
+      var mid = el.getAttribute('data-id');
+      if (!mid) break;
+      if (msSel[mid]) delete msSel[mid]; else msSel[mid] = true;
+      el.classList.toggle('sel', !!msSel[mid]);
+      var mbox = el.querySelector('.msbox');
+      if (mbox) mbox.textContent = msSel[mid] ? '✓' : '';
+      var y0 = window.scrollY, bar0 = document.querySelector('.msbar');
+      if (bar0) { bar0.outerHTML = msBarHTML(); window.scrollTo(0, y0); }
+      break;
+
+    case 'ms-all':
+      filteredWords().forEach(function(w){ msSel[w.id] = true; });
+      render();
+      toast('已选中 ' + msCount() + ' 个');
+      break;
+
+    case 'ms-none':
+      msSel = {};
+      render();
+      break;
+
+    case 'ms-del':
+      var mids = Object.keys(msSel);
+      if (!mids.length) { toast('还没选词'); break; }
+      var okMs = await showModal({
+        title: '删除所选',
+        body: '将删除 <b>' + mids.length + '</b> 个生词及其复习进度。<br><br>此操作无法撤销。',
+        actions: [
+          { id: 'cancel', label: '取消', primary: true },
+          { id: 'ok', label: '删除 ' + mids.length + ' 个', danger: true }
+        ]
+      });
+      if (okMs !== 'ok') break;
+      var msNow = Date.now(), msN = 0;
+      mids.forEach(function(k){
+        var mw = byId(k);
+        if (mw && !mw.deleted) { mw.deleted = true; mw.updatedAt = msNow; msN++; }
+      });
+      msSel = {};
+      saveNow();
+      render();
+      toast('已删除 ' + msN + ' 个单词');
+      break;
+
     case 'lib-filter':
       libF = el.getAttribute('data-f');
       libLimit = 60;
+      if (msMode) msSel = {};
       render();
       break;
 
