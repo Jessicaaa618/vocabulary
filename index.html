@@ -170,6 +170,29 @@ button{font:inherit; color:inherit;}
 .msbar .cnt{font-size:13px; font-weight:700; margin-right:auto;}
 .wrap.ms-pad{padding-bottom:120px;}
 
+/* ---------- 今日回顾 ---------- */
+.rv-head{display:flex; align-items:baseline; gap:8px;}
+.rv-head h2{font-size:16px; font-weight:700; margin:0; letter-spacing:.2px;}
+.rv-head .n{font-size:12px; color:var(--muted); margin-left:auto; font-variant-numeric:tabular-nums;}
+.rv-chips{display:flex; gap:7px; margin:11px 0 4px; flex-wrap:wrap;}
+.rv-chips .chip{height:30px; padding:0 12px; font-size:12px;}
+.rv-group{font-size:11px; font-weight:700; letter-spacing:.8px; color:#9aa1ac; margin:12px 0 2px;}
+.rv-row{display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid #f1f3f6; cursor:pointer;}
+.rv-row:last-child{border-bottom:0;}
+.rv-row .l{flex:1; min-width:0;}
+.rv-row .t{font-weight:700; font-size:15px; line-height:1.35; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.rv-row .d{font-size:12px; color:var(--muted); margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.rv-row .r{flex:0 0 auto; text-align:right;}
+.rv-row .tm{font-size:11px; color:#9aa1ac; margin-top:3px; font-variant-numeric:tabular-nums;}
+.gp{display:inline-block; font-size:10px; font-weight:700; padding:1px 7px; border-radius:6px; letter-spacing:.3px;}
+.gp.g1{background:var(--red-soft); color:var(--red);}
+.gp.g2{background:var(--amber-soft); color:var(--amber);}
+.gp.g3{background:var(--accent-soft); color:var(--accent);}
+.gp.g4{background:var(--green-soft); color:var(--green);}
+.gp.g0{background:#eef1f5; color:var(--muted);}
+.rv-detail{max-height:56vh; overflow:auto; color:var(--text);}
+.rv-detail .rv-meta{font-size:12px; color:var(--muted); line-height:1.65; padding-bottom:10px; border-bottom:1px dashed var(--line); margin-bottom:12px;}
+
 /* ---------- 导入面板 ---------- */
 details.imp{border:1px solid var(--line); border-radius:14px; background:#fff; margin-bottom:12px; overflow:hidden;}
 details.imp > summary{padding:14px; cursor:pointer; font-weight:600; font-size:15px; list-style:none; display:flex; align-items:center; justify-content:space-between;}
@@ -540,6 +563,9 @@ function normalizeWord(w){
     due: typeof s.due === 'number' ? s.due : w.createdAt,
     lastGrade: typeof s.lastGrade === 'number' ? s.lastGrade : null,
     lastReview: s.lastReview || null,
+    // 首次复习时间：用来判断「今天第一次学的词」。旧数据没有这个字段，从 history 最早一条推回来
+    firstAt: typeof s.firstAt === 'number' ? s.firstAt
+           : ((Array.isArray(s.history) && s.history.length && s.history[0].t) ? s.history[0].t : null),
     history: Array.isArray(s.history) ? s.history.slice(-20) : []
   };
   return w;
@@ -818,6 +844,149 @@ function backHTML(w){
   return out;
 }
 
+/* =====================================================================
+   6.5 今日回顾：把今天学过的词按「新学 / 复习」归拢起来
+   ===================================================================== */
+var rvF = 'all', rvOpen = false, RV_CAP = 8;
+
+/** 取某个词今天的所有评分记录（历史被裁剪或缺失时用 lastReview 兜底） */
+function rvTodayEntries(w, t0){
+  var s = (w && w.srs) || {};
+  var h = Array.isArray(s.history) ? s.history : [];
+  var es = h.filter(function(x){ return x && typeof x.t === 'number' && x.t >= t0; });
+  if (!es.length && s.lastReview && s.lastReview >= t0) {
+    es = [{ t: s.lastReview, grade: s.lastGrade || 0, ivl: s.interval }];
+  }
+  return es;
+}
+
+/** 今天学过的词：news 新学 / revs 复习 / all 全部，均按时间正序 */
+function todayStudy(now){
+  now = now || Date.now();
+  var t0 = dayStart(now);
+  var out = { t0: t0, news: [], revs: [], all: [] };
+  var words = (DB && DB.words) || [];
+  for (var i = 0; i < words.length; i++) {
+    var w = words[i];
+    if (!w || w.deleted) continue;
+    var es = rvTodayEntries(w, t0);
+    if (!es.length) continue;
+    var s = w.srs || {};
+    var h = Array.isArray(s.history) ? s.history : [];
+    // firstAt 是本版本新写的准确值；旧数据没有，就从 history 最早一条或建词时间推
+    var exact = typeof s.firstAt === 'number';
+    var firstAt = exact ? s.firstAt : (h.length ? (h[0].t || 0) : (w.createdAt || 0));
+    var last = es[es.length - 1];
+    var it = {
+      // 首次复习在今天才算「新学」。推算出来的 firstAt 可能因 history 裁剪而不准，用 reps 兜底
+      w: w, isNew: exact ? (firstAt >= t0) : (firstAt >= t0 && (s.reps | 0) <= 1),
+      t: last.t, n: es.length,
+      grade: last.grade | 0,
+      grades: es.map(function(x){ return x.grade | 0; })
+    };
+    out.all.push(it);
+    (it.isNew ? out.news : out.revs).push(it);
+  }
+  function asc(a, b){ return a.t - b.t; }
+  out.all.sort(asc); out.news.sort(asc); out.revs.sort(asc);
+  return out;
+}
+
+function rvGloss(w){
+  if (w.userDef) return w.userDef;
+  var L = w.longman || {};
+  if (L.entries && L.entries.length) {
+    var e = L.entries[0];
+    return (e.pos ? e.pos + '. ' : '') + (e.defs || []).join(' / ');
+  }
+  return '';
+}
+
+function rvRowHTML(it){
+  var w = it.w, g = it.grade, d = new Date(it.t);
+  var cls = g === 1 ? 'g1' : g === 3 ? 'g2' : g === 4 ? 'g3' : g === 5 ? 'g4' : 'g0';
+  var gloss = rvGloss(w);
+  return '<div class="rv-row" data-act="rv-word" data-id="' + esc(w.id) + '">' +
+    '<div class="l">' +
+      '<div class="t">' + esc(w.term) + '</div>' +
+      '<div class="d">' + (gloss ? esc(gloss) : '释义待获取') + '</div>' +
+    '</div>' +
+    '<div class="r">' +
+      '<span class="gp ' + cls + '">' + (g ? gradeLabel(g) : '已学') + '</span>' +
+      '<div class="tm">' + pad2(d.getHours()) + ':' + pad2(d.getMinutes()) +
+        (it.n > 1 ? ' · ' + it.n + ' 次' : '') + '</div>' +
+    '</div>' +
+  '</div>';
+}
+
+function rvListHTML(items, label){
+  if (!items.length) return '';
+  var html = label ? '<div class="rv-group">' + label + ' · ' + items.length + ' 个</div>' : '';
+  var show = rvOpen ? items : items.slice(0, RV_CAP);
+  return html + show.map(rvRowHTML).join('');
+}
+
+function rvHTML(){
+  var t = todayStudy();
+  var total = t.all.length;
+  var head = '<div class="rv-head"><h2>今日回顾</h2>' +
+    (total ? '<span class="n">新学 ' + t.news.length + ' · 复习 ' + t.revs.length + '</span>' : '') +
+    '</div>';
+
+  if (!total) {
+    return '<div class="panel card-shadow" style="margin-top:12px;">' + head +
+      '<div class="sub" style="margin-top:8px;">今天还没有学习记录。开背之后，这里会按「新学 / 复习」把今天碰过的词全部列出来。</div>' +
+    '</div>';
+  }
+
+  var chips = [['all', '全部 ' + total], ['new', '新学 ' + t.news.length], ['rev', '复习 ' + t.revs.length]]
+    .map(function(c){
+      return '<button class="chip' + (rvF === c[0] ? ' on' : '') + '" data-act="rv-f" data-f="' + c[0] + '">' + c[1] + '</button>';
+    }).join('');
+
+  var cur = rvF === 'new' ? t.news : rvF === 'rev' ? t.revs : t.all;
+  var body;
+  if (rvF === 'new')      body = rvListHTML(t.news, '');
+  else if (rvF === 'rev') body = rvListHTML(t.revs, '');
+  else                    body = rvListHTML(t.news, '新学') + rvListHTML(t.revs, '复习');
+
+  // 只有确实有分组被截断时才出现展开按钮，避免「看不到还有更多」的错位
+  var capped = rvF === 'new' ? t.news.length > RV_CAP
+             : rvF === 'rev' ? t.revs.length > RV_CAP
+             : (t.news.length > RV_CAP || t.revs.length > RV_CAP);
+  var more = '';
+  if (capped) {
+    more = rvOpen
+      ? '<button class="btn tiny block ghost" data-act="rv-less" style="margin-top:10px;">收起</button>'
+      : '<button class="btn tiny block ghost" data-act="rv-more" style="margin-top:10px;">显示全部 ' + cur.length + ' 个</button>';
+  }
+
+  return '<div class="panel card-shadow" style="margin-top:12px;">' + head +
+    '<div class="rv-chips">' + chips + '</div>' +
+    body + more +
+  '</div>';
+}
+
+/** 点开某个词时展示：今天的评分轨迹 + 朗文释义 */
+function rvDetailHTML(w){
+  var es = rvTodayEntries(w, dayStart(Date.now()));
+  var s = w.srs || {};
+  var parts = [];
+  if (es.length) {
+    var path = es.map(function(x){ return x.grade ? gradeLabel(x.grade | 0) : '—'; }).join(' → ');
+    parts.push('今日 ' + es.length + ' 次：' + path);
+  }
+  parts.push('累计复习 ' + (s.reps | 0) + ' 次' + (s.lapses ? '，忘过 ' + s.lapses + ' 次' : ''));
+  if (s.due) {
+    var dd = Math.round((s.due - dayStart(Date.now())) / DAY);
+    parts.push(dd <= 0 ? '今天内还需再复习' : '下次复习 ' + gapText(dd) + '后');
+  }
+  return '<div class="rv-detail">' +
+    '<div class="rv-meta">' + esc(parts.join(' · ')) + '</div>' +
+    backHTML(w) +
+  '</div>';
+}
+
 function studyHTML(){
   if (!SS.active) {
     var q = buildQueueData(DB.words, DB.stats.days, DB.settings);
@@ -831,6 +1000,7 @@ function studyHTML(){
         '<div class="sub" style="margin:10px 0 16px;">正面看单词，点一下翻面看朗文释义，然后按四档自评。</div>' +
         '<button class="btn primary big" data-act="start" ' + (n ? '' : 'disabled') + '>开始学习</button>' +
       '</div>' +
+      rvHTML() +
     '</div>';
   }
 
@@ -845,6 +1015,7 @@ function studyHTML(){
         '<div style="margin-top:18px;"><button class="btn primary big" data-act="home">回首页</button></div>' +
         '<div style="margin-top:10px;"><button class="btn block ghost" data-act="again-session">再来一轮</button></div>' +
       '</div>' +
+      rvHTML() +
     '</div>';
   }
 
@@ -931,6 +1102,7 @@ function submitGrade(q){
   w.srs.due = r.due;
   w.srs.lastGrade = q;
   w.srs.lastReview = now;
+  if (!w.srs.firstAt) w.srs.firstAt = now;
   w.srs.history = w.srs.history.concat([{ t: now, grade: q, ivl: r.interval, ef: w.srs.ef }]).slice(-20);
   w.status = w.mastered ? 'mastered' : (w.srs.reps > 0 ? 'learning' : 'new');
   w.updatedAt = now;
@@ -1946,6 +2118,33 @@ document.addEventListener('click', async function(e){
 
     case 'flip':
       flipCard();
+      break;
+
+    case 'rv-f':
+      rvF = el.getAttribute('data-f') || 'all';
+      rvOpen = false;
+      render();
+      break;
+
+    case 'rv-more':
+      rvOpen = true;
+      render();
+      break;
+
+    case 'rv-less':
+      rvOpen = false;
+      render();
+      break;
+
+    case 'rv-word':
+      var w5 = byId(id);
+      if (w5) {
+        showModal({
+          title: w5.term,
+          body: rvDetailHTML(w5),
+          actions: [{ id: 'ok', label: '关闭', primary: true }]
+        });
+      }
       break;
 
     case 'grade':
